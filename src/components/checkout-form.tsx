@@ -36,18 +36,30 @@ const checkoutSchema = z.object({
     "levantamento",
   ]),
   deliveryAddress: z.string().optional(),
+<<<<<<< HEAD
   paymentMethod: z.enum(["transferencia", "numerario", "multicaixa"], {
     required_error: "Método de pagamento é obrigatório.",
   }),
+=======
+  paymentMethod: z.enum(["numerario", "multicaixa", "transferencia"]),
+>>>>>>> 97a11f189f35acf67eca4011154cc4b5edbb7fb0
 });
 
 export default function CheckoutForm() {
+<<<<<<< HEAD
   const router = useRouter();
   const { toast } = useToast();
   const { t } = useLanguage();
   const { cartItems, cartTotal, clearCart } = useCart();
   const { readingPlan, schools, submitOrder } = useData();
   const { language } = useLanguage();
+=======
+    const router = useRouter();
+    const { toast } = useToast();
+    const { t, language } = useLanguage();
+    const { cartItems, cartTotal, clearCart } = useCart();
+    const { readingPlan, schools, addOrder } = useData();
+>>>>>>> 97a11f189f35acf67eca4011154cc4b5edbb7fb0
 
   const readingPlanProductIds = useMemo(() => {
     return new Set(readingPlan.map((item: ReadingPlanItem) => item.productId));
@@ -70,6 +82,7 @@ export default function CheckoutForm() {
     return schoolsInCart.some((school: School) => school.allowPickupAtLocation);
   }, [schoolsInCart]);
 
+<<<<<<< HEAD
   const conditionalCheckoutSchema = checkoutSchema.refine((data) => {
     if (isSchoolOrder) {
       return !!data.studentName;
@@ -95,6 +108,33 @@ export default function CheckoutForm() {
     message: t("checkout_form.errors.address_required"),
     path: ["deliveryAddress"],
   });
+=======
+    const conditionalCheckoutSchema = checkoutSchema.refine(data => {
+        if (data.deliveryOption === 'levantamento') {
+            return !!data.studentName && !!data.classAndGrade;
+        }
+        return true;
+    }, {
+        message: t('checkout_form.errors.student_info_required'),
+        path: ["studentName"],
+    }).refine(data => {
+        if (data.deliveryOption !== 'levantamento' && data.deliveryOption !== 'levantamento-local' && !data.deliveryAddress) {
+            return false;
+        }
+        return true;
+    }, {
+        message: t('checkout_form.errors.address_required'),
+        path: ["deliveryAddress"],
+    }).refine(data => {
+        if (["tala-morro","fora-tala","outras"].includes(data.deliveryOption) && data.paymentMethod === "multicaixa") {
+            return false;
+        }
+        return true;
+    }, {
+        message: t('checkout_form.errors.multicaixa_unavailable_for_delivery'),
+        path: ["paymentMethod"],
+    });
+>>>>>>> 97a11f189f35acf67eca4011154cc4b5edbb7fb0
 
   type CheckoutFormValues = z.infer<typeof conditionalCheckoutSchema>;
 
@@ -114,6 +154,7 @@ export default function CheckoutForm() {
 
   const deliveryOption = form.watch("deliveryOption");
 
+<<<<<<< HEAD
   const getDeliveryFee = () => {
     switch (deliveryOption) {
       case "delivery": return 2000; // Assuming 'delivery' is the new 'tala-morro'
@@ -122,6 +163,18 @@ export default function CheckoutForm() {
       default: return 0;
     }
   };
+=======
+    const isDelivery = deliveryOption === 'tala-morro' || deliveryOption === 'fora-tala' || deliveryOption === 'outras';
+
+    const getDeliveryFee = () => {
+        switch (deliveryOption) {
+            case "tala-morro": return 2000;
+            case "fora-tala": return 2500;
+            case "outras": return 4000;
+            default: return 0;
+        }
+    };
+>>>>>>> 97a11f189f35acf67eca4011154cc4b5edbb7fb0
 
   const deliveryFee = getDeliveryFee();
   const finalTotal = cartTotal + deliveryFee;
@@ -171,6 +224,31 @@ export default function CheckoutForm() {
       const urlParams = new URLSearchParams();
       urlParams.set("ref", orderReference);
       router.push(`/order-confirmation?${urlParams.toString()}`);
+=======
+        const orderReference = generateOrderReference();
+        const schoolInCart = schoolsInCart.length > 0 ? schoolsInCart[0] : undefined;
+        const schoolName = schoolInCart ? getDisplayName(schoolInCart.name, language) : undefined;
+        
+        try {
+            await addOrder({
+                ...data,
+                paymentMethod: data.paymentMethod,
+                deliveryAddress: data.deliveryAddress || null,
+                items: cartItems,
+                total: finalTotal,
+                deliveryFee,
+                reference: orderReference,
+                date: new Date().toISOString(),
+                schoolId: schoolInCart?.id,
+                schoolName: schoolName
+            });
+
+            clearCart();
+            const urlParams = new URLSearchParams();
+            urlParams.set("ref", orderReference);
+            urlParams.set("payment", data.paymentMethod);
+            router.push(`/order-confirmation?${urlParams.toString()}`);
+>>>>>>> 97a11f189f35acf67eca4011154cc4b5edbb7fb0
 
       toast({
         title: t("checkout_form.toast.order_submitted_title"),
@@ -187,6 +265,7 @@ export default function CheckoutForm() {
     }
   };
 
+<<<<<<< HEAD
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -333,6 +412,186 @@ export default function CheckoutForm() {
             )}
           />
         </div>
+=======
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <div className="space-y-4 rounded-lg border bg-card p-6">
+                    <h3 className="text-xl font-semibold">{t('checkout_form.delivery_options')}</h3>
+                    <FormField
+                        control={form.control}
+                        name="deliveryOption"
+                        render={({ field }) => (
+                            <FormItem className="space-y-3">
+                                <FormControl>
+                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
+                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                            <FormControl><RadioGroupItem value="tala-morro" /></FormControl>
+                                            <FormLabel className="font-normal">{t('checkout_form.delivery_option_1')}</FormLabel>
+                                        </FormItem>
+                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                            <FormControl><RadioGroupItem value="fora-tala" /></FormControl>
+                                            <FormLabel className="font-normal">{t('checkout_form.delivery_option_2')}</FormLabel>
+                                        </FormItem>
+                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                            <FormControl><RadioGroupItem value="outras" /></FormControl>
+                                            <FormLabel className="font-normal">{t('checkout_form.delivery_option_3')}</FormLabel>
+                                        </FormItem>
+                                        {allowPickupAtSchool && (
+                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                <FormControl><RadioGroupItem value="levantamento" /></FormControl>
+                                                <FormLabel className="font-normal">{t('checkout_form.delivery_option_4')}</FormLabel>
+                                            </FormItem>
+                                        )}
+                                        {allowPickupAtLocation && (
+                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                <FormControl><RadioGroupItem value="levantamento-local" /></FormControl>
+                                                <FormLabel className="font-normal">{t('checkout_form.delivery_option_5')}</FormLabel>
+                                            </FormItem>
+                                        )}
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    {deliveryOption !== 'levantamento' && deliveryOption !== 'levantamento-local' && (
+                         <FormField
+                            control={form.control}
+                            name="deliveryAddress"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t('checkout_form.delivery_address')}</FormLabel>
+                                    <FormControl><Textarea {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    )}
+                </div>
+
+                <div className="space-y-4 rounded-lg border bg-card p-6">
+                     <h3 className="text-xl font-semibold">{t('checkout_form.contact_details')}</h3>
+                     { deliveryOption === 'levantamento' && (
+                        <>
+                             <FormField
+                                control={form.control}
+                                name="studentName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t('checkout_form.student_name')}</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="classAndGrade"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t('checkout_form.class_and_grade')}</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </>
+                     )}
+                     <FormField
+                        control={form.control}
+                        name="guardianName"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>{t('checkout_form.guardian_name')}</FormLabel>
+                                <FormControl><Input {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>{t('checkout_form.phone')}</FormLabel>
+                                <FormControl><Input {...field} placeholder={t('checkout_form.phone_placeholder')} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl><Input type="email" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                 <div className="space-y-4 rounded-lg border bg-card p-6">
+                    <h3 className="text-xl font-semibold">{t('checkout_form.payment_method')}</h3>
+                    <FormField
+                        control={form.control}
+                        name="paymentMethod"
+                        render={({ field }) => (
+                            <FormItem className="space-y-3">
+                                <FormControl>
+                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
+                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                            <FormControl><RadioGroupItem value="numerario" /></FormControl>
+                                            <FormLabel className="font-normal">{t('checkout_form.payment_method_1')}</FormLabel>
+                                        </FormItem>
+                                        {!isDelivery && (
+                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                <FormControl><RadioGroupItem value="multicaixa" /></FormControl>
+                                                <FormLabel className="font-normal">{t('checkout_form.payment_method_2')}</FormLabel>
+                                            </FormItem>
+                                        )}
+                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                            <FormControl><RadioGroupItem value="transferencia" /></FormControl>
+                                            <FormLabel className="font-normal">{t('checkout_form.payment_method_3')}</FormLabel>
+                                        </FormItem>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                 </div>
+
+                <div className="space-y-4 rounded-lg border bg-card p-6">
+                    <h3 className="text-xl font-semibold">{t('checkout_page.order_summary')}</h3>
+                    <div className="space-y-2">
+                        {cartItems.map((item) => (
+                            <div key={item.id} className="flex justify-between">
+                                <span>{getDisplayName(item.name, language)}</span>
+                                <span>{item.quantity} x {item.price.toLocaleString("pt-PT")} AOA</span>
+                            </div>
+                        ))}
+                        <div className="border-t pt-2 mt-2">
+                            <div className="flex justify-between">
+                                <span>{t('checkout_page.subtotal')}</span>
+                                <span>{cartTotal.toLocaleString("pt-PT")} AOA</span>
+                            </div>
+                            {deliveryFee > 0 && (
+                                <div className="flex justify-between">
+                                    <span>{t('checkout_form.delivery_options')}</span>
+                                    <span>{deliveryFee.toLocaleString("pt-PT")} AOA</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between font-bold mt-2">
+                                <span>Total</span>
+                                <span>{finalTotal.toLocaleString("pt-PT")} AOA</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+>>>>>>> 97a11f189f35acf67eca4011154cc4b5edbb7fb0
 
         <div className="mt-6">
           <p className="text-lg font-bold">{t("checkout_form.cart_total")}: {cartTotal.toFixed(2)} Kz</p>
