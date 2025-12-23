@@ -1,13 +1,19 @@
-
-"use client";
-
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
+import { CartContext, useCart } from "@/context/cart-context";
+import { DataContext, useData } from "@/context/data-context";
+import { LanguageContext, useLanguage } from "@/context/language-context";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CartItem, Product, ReadingPlanItem, School } from "@/lib/types";
 import { getDisplayName } from "@/lib/utils";
-
 import {
   Form,
   FormControl,
@@ -16,14 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { useCart } from "@/context/cart-context";
-import { useToast } from "@/hooks/use-toast";
-import { useData } from "@/context/data-context";
-import { useLanguage } from "@/context/language-context";
 
 const checkoutSchema = z.object({
   studentName: z.string().optional(),
@@ -32,276 +31,319 @@ const checkoutSchema = z.object({
   guardianName: z.string().min(1, "O nome do responsável é obrigatório."),
   email: z.string().email("Por favor, insira um email válido."),
   deliveryOption: z.enum([
-    "tala-morro",
-    "fora-tala",
-    "outras",
+    "delivery",
+    "pickup",
     "levantamento",
-    "levantamento-local",
   ]),
   deliveryAddress: z.string().optional(),
+  paymentMethod: z.enum(["transferencia", "numerario", "multicaixa"], {
+    required_error: "Método de pagamento é obrigatório.",
+  }),
 });
 
-
 export default function CheckoutForm() {
-    const router = useRouter();
-    const { toast } = useToast();
-    const { t } = useLanguage();
-    const { cartItems, cartTotal, clearCart } = useCart();
-    const { readingPlan, schools, addOrder } = useData();
-    const { language } = useLanguage();
+  const router = useRouter();
+  const { toast } = useToast();
+  const { t } = useLanguage();
+  const { cartItems, cartTotal, clearCart } = useCart();
+  const { readingPlan, schools, submitOrder } = useData();
+  const { language } = useLanguage();
 
-    const readingPlanProductIdsInCart = useMemo(() => {
-        const readingPlanProductIds = new Set(readingPlan.map(item => item.productId));
-        return cartItems.filter(item => readingPlanProductIds.has(item.id));
-    }, [cartItems, readingPlan]);
+  const readingPlanProductIds = useMemo(() => {
+    return new Set(readingPlan.map((item: ReadingPlanItem) => item.productId));
+  }, [readingPlan]);
 
-    const requiresStudentInfo = readingPlanProductIdsInCart.length > 0;
-    
-    const schoolsInCart = useMemo(() => {
-        const schoolIdsInCart = new Set(readingPlan.filter(rp => readingPlanProductIdsInCart.some(ci => ci.id === rp.productId)).map(rp => rp.schoolId));
-        return schools.filter(school => schoolIdsInCart.has(school.id));
-    }, [readingPlanProductIdsInCart, schools, readingPlan]);
+  const isSchoolOrder = useMemo(() => {
+    return cartItems.some((item: CartItem) => item.kitId !== undefined) || cartItems.some((item: CartItem) => item.id && readingPlanProductIds.has(item.id));
+  }, [cartItems, readingPlanProductIds]);
 
-    const allowPickupAtSchool = useMemo(() => {
-        return requiresStudentInfo && schoolsInCart.some(school => school.allowPickup);
-    }, [requiresStudentInfo, schoolsInCart]);
+  const schoolsInCart = useMemo(() => {
+    const schoolIdsInCart = new Set(readingPlan.filter((rp: ReadingPlanItem) => cartItems.some((ci: CartItem) => ci.id === rp.productId)).map((rp: ReadingPlanItem) => rp.schoolId));
+    return schools.filter((school: School) => schoolIdsInCart.has(school.id));
+  }, [cartItems, schools, readingPlan]);
 
-    const allowPickupAtLocation = useMemo(() => {
-        return schoolsInCart.some(school => school.allowPickupAtLocation);
-    }, [schoolsInCart]);
+  const allowPickupAtSchool = useMemo(() => {
+    return isSchoolOrder && schoolsInCart.some((school: School) => school.allowPickup);
+  }, [isSchoolOrder, schoolsInCart]);
 
+  const allowPickupAtLocation = useMemo(() => {
+    return schoolsInCart.some((school: School) => school.allowPickupAtLocation);
+  }, [schoolsInCart]);
 
-    const conditionalCheckoutSchema = checkoutSchema.refine(data => {
-        if (requiresStudentInfo) {
-            return !!data.studentName && !!data.classAndGrade;
-        }
-        return true;
-    }, {
-        message: t('checkout_form.errors.student_info_required'),
-        path: ["studentName"], // You can choose which field to show the error on
-    }).refine(data => {
-        if (data.deliveryOption !== 'levantamento' && data.deliveryOption !== 'levantamento-local' && !data.deliveryAddress) {
-            return false;
-        }
-        return true;
-    }, {
-        message: t('checkout_form.errors.address_required'),
-        path: ["deliveryAddress"],
-    });
+  const conditionalCheckoutSchema = checkoutSchema.refine((data) => {
+    if (isSchoolOrder) {
+      return !!data.studentName;
+    }
+    return true;
+  }, {
+    message: t("checkout_form.errors.student_name_required"),
+    path: ["studentName"],
+  }).refine((data) => {
+    if (isSchoolOrder && data.deliveryOption === "levantamento") {
+      return !!data.classAndGrade;
+    }
+    return true;
+  }, {
+    message: t("checkout_form.errors.class_and_grade_required"),
+    path: ["classAndGrade"],
+  }).refine((data) => {
+    if (data.deliveryOption === "delivery" && !data.deliveryAddress) {
+      return false;
+    }
+    return true;
+  }, {
+    message: t("checkout_form.errors.address_required"),
+    path: ["deliveryAddress"],
+  });
 
-    type CheckoutFormValues = z.infer<typeof conditionalCheckoutSchema>;
+  type CheckoutFormValues = z.infer<typeof conditionalCheckoutSchema>;
 
-    const form = useForm<CheckoutFormValues>({
-        resolver: zodResolver(conditionalCheckoutSchema),
-        defaultValues: {
-            studentName: "",
-            classAndGrade: "",
-            phone: "",
-            guardianName: "",
-            email: "",
-            deliveryOption: "tala-morro",
-            deliveryAddress: "",
-        },
-    });
+  const form = useForm<CheckoutFormValues>({
+    resolver: zodResolver(conditionalCheckoutSchema),
+    defaultValues: {
+      studentName: "",
+      classAndGrade: "",
+      phone: "",
+      guardianName: "",
+      email: "",
+      deliveryOption: "delivery",
+      deliveryAddress: "",
+      paymentMethod: "transferencia",
+    },
+  });
 
-    const deliveryOption = form.watch("deliveryOption");
+  const deliveryOption = form.watch("deliveryOption");
 
-    const getDeliveryFee = () => {
-        switch (deliveryOption) {
-            case "tala-morro": return 2000;
-            case "fora-tala": return 2500;
-            case "outras": return 4000;
-            default: return 0;
-        }
-    };
+  const getDeliveryFee = () => {
+    switch (deliveryOption) {
+      case "delivery": return 2000; // Assuming 'delivery' is the new 'tala-morro'
+      case "pickup": return 2500; // Assuming 'pickup' is the new 'fora-tala'
+      case "levantamento": return 0; // Pickup at school, no delivery fee
+      default: return 0;
+    }
+  };
 
-    const deliveryFee = getDeliveryFee();
-    const finalTotal = cartTotal + deliveryFee;
+  const deliveryFee = getDeliveryFee();
+  const finalTotal = cartTotal + deliveryFee;
 
-    const generateOrderReference = () => {
-        let prefix = "LIV"; // Default prefix
-        if (schoolsInCart.length > 0) {
-            const school = schools.find(s => s.id === schoolsInCart[0].id);
-            if (school) {
-                prefix = school.abbreviation;
-            }
-        }
-        return `${prefix}-${new Date().getFullYear()}${(Math.random() * 90000 + 10000).toFixed(0)}`;
+  const generateOrderReference = () => {
+    let prefix = "LIV"; // Default prefix
+    if (schoolsInCart.length > 0) {
+      const school = schools.find((s: School) => s.id === schoolsInCart[0].id);
+      if (school) {
+        prefix = school.abbreviation;
+      }
+    }
+    return `${prefix}-${new Date().getFullYear()}${(Math.random() * 90000 + 10000).toFixed(0)}`;
+  };
+
+  const onSubmit = async (data: CheckoutFormValues) => {
+    if (cartItems.length === 0) {
+      toast({
+        title: t("checkout_form.toast.cart_empty_title"),
+        description: t("checkout_form.toast.cart_empty_description"),
+        variant: "destructive"
+      });
+      return;
     }
 
-    const onSubmit = async (data: CheckoutFormValues) => {
-        if(cartItems.length === 0){
-            toast({
-                title: t('checkout_form.toast.cart_empty_title'),
-                description: t('checkout_form.toast.cart_empty_description'),
-                variant: "destructive"
-            });
-            return;
-        }
+    const orderReference = generateOrderReference();
+    const schoolInCart = schoolsInCart.length > 0 ? schoolsInCart[0] : undefined;
+    const schoolName = schoolInCart ? (getDisplayName(schoolInCart.name, language) || null) : null;
 
-        const orderReference = generateOrderReference();
-        const schoolInCart = schoolsInCart.length > 0 ? schoolsInCart[0] : undefined;
-        const schoolName = schoolInCart ? getDisplayName(schoolInCart.name, language) : undefined;
-        
-        try {
-            await addOrder({
-                ...data,
-                paymentMethod: "unspecified", // Add this line
-                deliveryAddress: data.deliveryAddress || null,
-                items: cartItems,
-                total: finalTotal,
-                deliveryFee,
-                reference: orderReference,
-                date: new Date().toISOString(),
-                schoolId: schoolInCart?.id,
-                schoolName: schoolName
-            });
+    try {
+      await submitOrder({
+        ...data,
+        paymentMethod: data.paymentMethod, // Use the selected payment method
+        deliveryAddress: data.deliveryOption === "delivery" ? data.deliveryAddress : null,
+        items: cartItems,
+        total: finalTotal,
+        deliveryFee,
+        reference: orderReference,
+        date: new Date().toISOString(),
+        schoolId: schoolInCart?.id,
+        schoolName: schoolName,
+        studentName: isSchoolOrder ? data.studentName : undefined,
+        studentClass: (isSchoolOrder && data.deliveryOption === "levantamento") ? (data.classAndGrade ?? undefined) : undefined,
+      });
 
-            clearCart();
-            const urlParams = new URLSearchParams();
-            urlParams.set("ref", orderReference);
-            router.push(`/order-confirmation?${urlParams.toString()}`);
+      clearCart();
+      const urlParams = new URLSearchParams();
+      urlParams.set("ref", orderReference);
+      router.push(`/order-confirmation?${urlParams.toString()}`);
 
-            toast({
-                title: t('checkout_form.toast.order_submitted_title'),
-                description: t('checkout_form.toast.order_submitted_description')
-            });
+      toast({
+        title: t("checkout_form.toast.order_submitted_title"),
+        description: t("checkout_form.toast.order_submitted_description")
+      });
 
-        } catch (error) {
-            // Error toast is handled in DataContext
-            console.error("Failed to submit order:", error);
-        }
-    };
+    } catch (error) {
+      console.error("Failed to submit order:", error);
+      toast({
+        title: t("checkout_form.toast.order_submission_failed_title"),
+        description: t("checkout_form.toast.order_submission_failed_description"),
+        variant: "destructive",
+      });
+    }
+  };
 
-    return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="space-y-4 rounded-lg border bg-card p-6">
-                     <h3 className="text-xl font-semibold">{t('checkout_form.contact_details')}</h3>
-                     { requiresStudentInfo && (
-                        <>
-                             <FormField
-                                control={form.control}
-                                name="studentName"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t('checkout_form.student_name')}</FormLabel>
-                                        <FormControl><Input {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="classAndGrade"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t('checkout_form.class_and_grade')}</FormLabel>
-                                        <FormControl><Input {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </>
-                     )}
-                     <FormField
-                        control={form.control}
-                        name="guardianName"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('checkout_form.guardian_name')}</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('checkout_form.phone')}</FormLabel>
-                                <FormControl><Input {...field} placeholder={t('checkout_form.phone_placeholder')} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Email</FormLabel>
-                                <FormControl><Input type="email" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div className="space-y-4 rounded-lg border bg-card p-6">
+          <h3 className="text-xl font-semibold">{t("checkout_form.contact_details")}</h3>
+          {isSchoolOrder && (
+            <>
+              <FormField
+                control={form.control}
+                name="studentName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("checkout_form.student_name")}</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {deliveryOption === "levantamento" && (
+                <FormField
+                  control={form.control}
+                  name="classAndGrade"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("checkout_form.class_and_grade")}</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </>
+          )}
+          <FormField
+            control={form.control}
+            name="guardianName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("checkout_form.guardian_name")}</FormLabel>
+                <FormControl><Input {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("checkout_form.phone")}</FormLabel>
+                <FormControl><Input {...field} placeholder={t("checkout_form.phone_placeholder")} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl><Input type="email" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-                <div className="space-y-4 rounded-lg border bg-card p-6">
-                    <h3 className="text-xl font-semibold">{t('checkout_form.delivery_options')}</h3>
-                    <FormField
-                        control={form.control}
-                        name="deliveryOption"
-                        render={({ field }) => (
-                            <FormItem className="space-y-3">
-                                <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="tala-morro" /></FormControl>
-                                            <FormLabel className="font-normal">{t('checkout_form.delivery_option_1')}</FormLabel>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="fora-tala" /></FormControl>
-                                            <FormLabel className="font-normal">{t('checkout_form.delivery_option_2')}</FormLabel>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="outras" /></FormControl>
-                                            <FormLabel className="font-normal">{t('checkout_form.delivery_option_3')}</FormLabel>
-                                        </FormItem>
-                                        {allowPickupAtSchool && (
-                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl><RadioGroupItem value="levantamento" /></FormControl>
-                                                <FormLabel className="font-normal">{t('checkout_form.delivery_option_4')}</FormLabel>
-                                            </FormItem>
-                                        )}
-                                        {allowPickupAtLocation && (
-                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl><RadioGroupItem value="levantamento-local" /></FormControl>
-                                                <FormLabel className="font-normal">{t('checkout_form.delivery_option_5')}</FormLabel>
-                                            </FormItem>
-                                        )}
-                                    </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    {deliveryOption !== 'levantamento' && deliveryOption !== 'levantamento-local' && (
-                         <FormField
-                            control={form.control}
-                            name="deliveryAddress"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('checkout_form.delivery_address')}</FormLabel>
-                                    <FormControl><Textarea {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+        <div className="space-y-4 rounded-lg border bg-card p-6">
+          <h3 className="text-xl font-semibold">{t("checkout_form.delivery_options")}</h3>
+          <FormField
+            control={form.control}
+            name="deliveryOption"
+            render={({ field }) => (
+              <FormItem className="space-y-3">
+                <FormControl>
+                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl><RadioGroupItem value="delivery" /></FormControl>
+                      <FormLabel className="font-normal">{t("checkout_form.delivery_option_1")}</FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl><RadioGroupItem value="pickup" /></FormControl>
+                      <FormLabel className="font-normal">{t("checkout_form.delivery_option_2")}</FormLabel>
+                    </FormItem>
+                    {allowPickupAtSchool && (
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl><RadioGroupItem value="levantamento" /></FormControl>
+                        <FormLabel className="font-normal">{t("checkout_form.delivery_option_4")}</FormLabel>
+                      </FormItem>
                     )}
-                </div>
+                    {allowPickupAtLocation && (
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl><RadioGroupItem value="levantamento-local" /></FormControl>
+                        <FormLabel className="font-normal">{t("checkout_form.delivery_option_5")}</FormLabel>
+                      </FormItem>
+                    )}
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {deliveryOption === "delivery" && (
+            <FormField
+              control={form.control}
+              name="deliveryAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("checkout_form.delivery_address")}</FormLabel>
+                  <FormControl><Textarea {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+        </div>
 
-                 <div className="space-y-4 rounded-lg border bg-card p-6">
-                    <h3 className="text-xl font-semibold">{t('checkout_form.payment_method')}</h3>
-                     
-                </div>
+        <div className="space-y-4 rounded-lg border bg-card p-6">
+          <h3 className="text-xl font-semibold">{t("checkout_form.payment_method")}</h3>
+          <FormField
+            control={form.control}
+            name="paymentMethod"
+            render={({ field }) => (
+              <FormItem className="space-y-3">
+                <FormControl>
+                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl><RadioGroupItem value="transferencia" /></FormControl>
+                      <FormLabel className="font-normal">{t("checkout_form.payment_method_transferencia")}</FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl><RadioGroupItem value="numerario" /></FormControl>
+                      <FormLabel className="font-normal">{t("checkout_form.payment_method_numerario")}</FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl><RadioGroupItem value="multicaixa" /></FormControl>
+                      <FormLabel className="font-normal">{t("checkout_form.payment_method_multicaixa")}</FormLabel>
+                    </FormItem>
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-                <Button type="submit" size="lg" className="w-full">
-                    {t('checkout_form.submit_button')} {finalTotal.toLocaleString("pt-PT", { style: "currency", currency: "AOA", minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                </Button>
-            </form>
-        </Form>
-    );
+        <div className="mt-6">
+          <p className="text-lg font-bold">{t("checkout_form.cart_total")}: {cartTotal.toFixed(2)} Kz</p>
+          <p className="text-lg font-bold">{t("checkout_form.delivery_fee")}: {deliveryFee.toFixed(2)} Kz</p>
+          <p className="text-xl font-bold">{t("checkout_form.total")}: {(cartTotal + deliveryFee).toFixed(2)} Kz</p>
+        </div>
+
+        <Button type="submit" size="lg" className="w-full">
+          {t("checkout_form.submit_button")} {finalTotal.toLocaleString("pt-PT", { style: "currency", currency: "AOA", minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+        </Button>
+      </form>
+    </Form>
+  );
 }
