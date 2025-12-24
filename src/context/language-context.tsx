@@ -17,7 +17,7 @@ interface LanguageContextType {
 
 const translations = { pt, en };
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+export const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 // Helper function to get nested keys
 const getNestedValue = (obj: Record<string, unknown>, key: string): string | undefined => {
@@ -82,3 +82,4 @@ export const useLanguage = () => {
   }
   return context;
 };
+

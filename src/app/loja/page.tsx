@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 async function getShopData() {
   // Build absolute URLs using the current request headers to ensure
   // server-side fetch hits the correct origin in all environments.
-  const hdrs = headers();
+  const hdrs = await headers();
   const host = hdrs.get('x-forwarded-host') || hdrs.get('host') || '';
   const proto = hdrs.get('x-forwarded-proto') || 'https';
   const origin = host ? `${proto}://${host}` : '';
@@ -87,3 +87,4 @@ export default async function LojaPage() {
     </div>
   );
 }
+

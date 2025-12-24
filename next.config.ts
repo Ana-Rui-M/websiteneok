@@ -7,13 +7,16 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
         port: '',
-        pathname: '/v0/b/biblioangola.firebasestorage.app/o/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '**',
+        pathname: '/v0/b/biblioangola.appspot.com/o/**',
       },
     ],
+  },
+  // Reduce dev noise and remove console statements in production
+  reactStrictMode: false,
+  compiler: {
+    removeConsole: {
+      exclude: ['error', 'warn'],
+    },
   },
   typescript: {
     // !! WARN !!
@@ -25,3 +28,4 @@ const nextConfig = {
 }
 
 export default nextConfig
+

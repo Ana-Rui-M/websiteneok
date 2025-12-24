@@ -1,7 +1,6 @@
 
 "use client";
 
-import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -48,14 +47,21 @@ export default function ProductCard({ product, productBadgeRenderer }: ProductCa
             <CarouselContent>
               {product.image.map((img: string, index: number) => (
                  <CarouselItem key={index}>
-                    <div className="aspect-video overflow-hidden relative">
-                      <Image
+                    <div className="relative h-48 w-full overflow-hidden">
+                      <img
                         alt={`${displayName} image ${index + 1}`}
                         className="h-full w-full object-cover"
                         height="400"
                         src={normalizeImageUrl(img)}
                         width="600"
                         data-ai-hint={product.dataAiHint}
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (!target.dataset.fallbackApplied) {
+                            target.dataset.fallbackApplied = "true";
+                            target.src = "https://placehold.co/600x400.png";
+                          }
+                        }}
                       />
                     </div>
                 </CarouselItem>
@@ -69,13 +75,19 @@ export default function ProductCard({ product, productBadgeRenderer }: ProductCa
             )}
           </Carousel>
         ) : (
-           <div className="aspect-video overflow-hidden relative">
-            <Image
+           <div className="relative h-48 w-full overflow-hidden">
+            <img
               alt={`${displayName || ''} image ${0 + 1}`}
-              className="object-cover"
-              fill
+              className="object-cover w-full h-full"
               src={displayImage}
               data-ai-hint={product.dataAiHint}
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.dataset.fallbackApplied) {
+                  target.dataset.fallbackApplied = "true";
+                  target.src = "https://placehold.co/600x400.png";
+                }
+              }}
             />
           </div>
         )}

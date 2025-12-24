@@ -19,7 +19,7 @@ interface CartContextType {
   addKitToCart: (products: Product[], kitName: string) => void;
 }
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+export const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -127,3 +127,4 @@ export const useCart = () => {
   }
   return context;
 };
+

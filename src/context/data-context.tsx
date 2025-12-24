@@ -44,6 +44,7 @@ interface DataContextType {
   // Orders
   orders: Order[];
   setOrders: (orders: Order[]) => void;
+  submitOrder: (order: Omit<Order, 'paymentStatus' | 'deliveryStatus'>) => Promise<void>;
   addOrder: (order: Omit<Order, 'paymentStatus' | 'deliveryStatus'>) => Promise<void>;
   updateOrderPaymentStatus: (orderReference: string, status: PaymentStatus) => Promise<void>;
   updateOrderDeliveryStatus: (orderReference: string, status: DeliveryStatus) => Promise<void>;
@@ -52,14 +53,15 @@ interface DataContextType {
 
 }
 
-const DataContext = createContext<DataContextType | undefined>(undefined);
+export const DataContext = createContext<DataContextType | undefined>(undefined);
 
 interface DataProviderProps {
   children: ReactNode;
-  initialSchools: School[];
-  initialProducts: Product[];
-  initialReadingPlan: ReadingPlanItem[];
-  initialCategories: Category[];
+  initialSchools?: School[];
+  initialProducts?: Product[];
+  initialReadingPlan?: ReadingPlanItem[];
+  initialCategories?: Category[];
+  initialOrders?: Order[];
 }
 
 export const DataProvider = ({
@@ -68,19 +70,38 @@ export const DataProvider = ({
   initialProducts,
   initialReadingPlan,
   initialCategories,
+  initialOrders,
 }: DataProviderProps) => {
   const [loading, setLoading] = useState(false);
-  const [schools, setSchools] = useState<School[]>(initialSchools);
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [readingPlan, setReadingPlan] = useState<ReadingPlanItem[]>(initialReadingPlan);
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [schools, setSchools] = useState<School[]>(initialSchools ?? []);
+  const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
+  const [readingPlan, setReadingPlan] = useState<ReadingPlanItem[]>(initialReadingPlan ?? []);
+  const [categories, setCategories] = useState<Category[]>(initialCategories ?? []);
   const { language } = useLanguage();
   const [publishers, setPublishers] = useState<string[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[]>(initialOrders ?? []);
   const { toast } = useToast();
-  
 
-
+  // Order mutations
+  const submitOrder = async (order: Omit<Order, 'paymentStatus' | 'deliveryStatus'>) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order),
+      });
+      if (!response.ok) throw new Error('Failed to submit order');
+      const updated = await fetch('/api/orders');
+      const updatedOrders = await updated.json();
+      setOrders(updatedOrders);
+    } catch (error) {
+      console.error(error);
+      throw error; // Re-throw to be caught by the form handler
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // School mutations
   const addSchool = async (school: School) => {
@@ -419,7 +440,7 @@ export const DataProvider = ({
         readingPlan, setReadingPlan,
         categories, setCategories, addCategory, deleteCategory,
         publishers, setPublishers, addPublisher, deletePublisher,
-        orders, setOrders, addOrder, updateOrderPaymentStatus, updateOrderDeliveryStatus, deleteOrder,
+        orders, setOrders, submitOrder, updateOrderPaymentStatus, updateOrderDeliveryStatus, deleteOrder,
       }}
     >
       {children}
@@ -442,3 +463,4 @@ export const useData = () => {
   }
   return context;
 };
+

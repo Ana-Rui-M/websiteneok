@@ -29,7 +29,7 @@ export function normalizeImageUrl(image?: string): string {
     // - Duplicate or noisy query params (ensure only alt=media and token)
     if (/^https?:\/\/firebasestorage\.googleapis\.com\//.test(image)) {
       // Fix bucket name if incorrectly saved
-      let cleaned = image.replace(
+      const cleaned = image.replace(
         /\/v0\/b\/([^\/]+)\.firebasestorage\.app\/o\//,
         (_m, bucket) => `/v0/b/${bucket}.appspot.com/o/`
       );

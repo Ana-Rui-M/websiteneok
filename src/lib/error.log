@@ -42,3 +42,10 @@
 2025-10-06T19:54:40.928Z - Error fetching schools in GET function: Unexpected token 'e', "eyJ0eXBlIj"... is not valid JSON
 2025-10-06T19:54:45.919Z - Error fetching schools in GET function: Unexpected token 'e', "eyJ0eXBlIj"... is not valid JSON
 2025-10-06T20:03:36.540Z - Error fetching schools in GET function: Unexpected token 'e', "eyJ0eXBlIj"... is not valid JSON
+2025-10-20T21:21:34.452Z - Error fetching schools in GET function: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.
+2025-10-20T21:21:51.999Z - Error fetching schools in GET function: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.
+2025-10-20T21:24:13.730Z - Error fetching schools in GET function: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.
+2025-12-23T17:19:35.879Z - Error fetching schools in GET function: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.
+2025-12-23T17:19:35.916Z - Error fetching schools in GET function: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.
+2025-12-23T17:30:18.933Z - Error fetching schools in GET function: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.
+2025-12-23T17:31:11.701Z - Error fetching schools in GET function: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.

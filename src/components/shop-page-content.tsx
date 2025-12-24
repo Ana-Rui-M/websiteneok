@@ -111,6 +111,20 @@ export const ShopPageContent = ({
         grades[gradeKey].all.push(product);
       }
     }
+    // Deduplicate by product id to avoid React key collisions
+    Object.keys(grades).forEach((g) => {
+      const uniq = (arr: Product[]) => {
+        const seen = new Set<string>();
+        return arr.filter((p) => {
+          if (seen.has(p.id)) return false;
+          seen.add(p.id);
+          return true;
+        });
+      };
+      grades[g].mandatory = uniq(grades[g].mandatory);
+      grades[g].recommended = uniq(grades[g].recommended);
+      grades[g].all = uniq(grades[g].all);
+    });
     return grades;
   }, [schoolReadingPlan, productsById]);
   

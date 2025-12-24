@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -30,12 +29,12 @@ export default function LandingPage() {
         <section className="relative flex min-h-dvh w-full flex-col justify-center bg-muted/20">
           <div className="container relative z-10 flex h-full flex-col justify-center gap-12 text-center">
             <div className="flex flex-col items-center">
-                <h1 className="font-headline text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                  {t('landing.hero_title')}
-                </h1>
-                <p className="mt-4 max-w-2xl text-xl text-foreground">
-                  {t('landing.hero_subtitle')}
-                </p>
+              <h1 className="font-headline text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+                {t('landing.hero_title')}
+              </h1>
+              <p className="mt-4 max-w-2xl text-xl text-foreground">
+                {t('landing.hero_subtitle')}
+              </p>
             </div>
             
             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -51,7 +50,7 @@ export default function LandingPage() {
                     {t('landing.card1_description')}
                   </p>
                    <Button asChild variant="outline" className="mt-6 text-[var(--link-color)] hover:text-[var(--link-hover-color)]">
-                        <Link href="/loja">{t('landing.card1_button')}</Link>
+                        <Link href="/loja?tab=planos">{t('landing.card1_button')}</Link>
                     </Button>
                 </CardContent>
               </Card>

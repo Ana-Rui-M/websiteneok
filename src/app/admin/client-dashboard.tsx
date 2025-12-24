@@ -32,7 +32,7 @@ export default function AdminDashboardClient({ initialProducts, initialOrders, i
 
   const totalBooks = useMemo(() => products.filter(p => p.type === 'book').length, [products]);
   const totalGames = useMemo(() => products.filter(p => p.type === 'game').length, [products]);
-  const activeOrders = useMemo(() => orders.filter(o => o.deliveryStatus !== 'delivered' && o.deliveryStatus !== 'cancelled').length, [orders]);
+  const activeOrders = useMemo(() => (orders || []).filter(o => o.deliveryStatus !== 'delivered' && o.deliveryStatus !== 'cancelled').length, [orders]);
   const totalSchools = schools.length;
 
 

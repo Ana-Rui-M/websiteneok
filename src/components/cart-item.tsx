@@ -1,7 +1,7 @@
 
 "use client";
 
-import Image from "next/image";
+
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/cart-context";
 import type { CartItem as CartItemType } from "@/lib/types";
@@ -31,12 +31,18 @@ export default function CartItem({ item, isKitItem = false }: CartItemProps) {
   return (
     <div className="flex items-start gap-4">
       <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border">
-        <Image
+        <img
           src={displayImage}
           alt={getDisplayName(item.name, language)}
-          fill
-          className="object-cover"
+          className="object-cover w-full h-full"
           data-ai-hint={item.dataAiHint}
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (!target.dataset.fallbackApplied) {
+              target.dataset.fallbackApplied = "true";
+              target.src = "https://placehold.co/600x400.png";
+            }
+          }}
         />
       </div>
       <div className="flex flex-1 flex-col gap-1">

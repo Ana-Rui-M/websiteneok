@@ -196,12 +196,12 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
               {filteredProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="hidden sm:table-cell">
-                    <Image
+                    <img 
                       alt={getDisplayName(product.name, language)}
                       className="aspect-square rounded-md object-cover"
-                      height="64"
-                      src={Array.isArray(product.image) ? product.image[0] : product.image || 'https://placehold.co/64x64.png'}
-                      width="64"
+                      height={64}
+                      src={Array.isArray(product.image) ? product.image[0] : (product.image || 'https://placehold.co/64x64.png')}
+                      width={64}
                     />
                   </TableCell>
                   <TableCell className="font-medium">{getDisplayName(product.name, language)}</TableCell>
