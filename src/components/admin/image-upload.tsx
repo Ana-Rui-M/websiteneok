@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { normalizeImageUrl } from '@/lib/utils';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface ImageUploadProps {
   label?: string;
@@ -25,7 +27,7 @@ export function ImageUpload({ label = 'Imagem', value, onChange, multiple = fals
     try {
       const uploaded: string[] = [];
       for (const file of Array.from(files)) {
-        const url = await uploadToR2(file, folder);
+        const url = await uploadToFirebase(file, folder);
         if (url) uploaded.push(url);
       }
       const next = multiple ? [...images, ...uploaded] : (uploaded[0] || images[0] || '');
@@ -102,12 +104,11 @@ export function ImageUpload({ label = 'Imagem', value, onChange, multiple = fals
   );
 }
 
-async function uploadToR2(file: File, folder?: string): Promise<string | null> {
-  const fd = new FormData();
-  fd.append('file', file);
-  if (folder) fd.append('folder', folder);
-  const res = await fetch('/api/upload/r2', { method: 'POST', body: fd });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.message || 'Upload falhou');
-  return data?.url || null;
+async function uploadToFirebase(file: File, folder?: string): Promise<string | null> {
+  const base = folder ? folder.replace(/\/+$/,'') : 'uploads';
+  const key = `${base}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+  const imageRef = ref(storage, key);
+  await uploadBytes(imageRef, file, { contentType: file.type || 'application/octet-stream' });
+  const url = await getDownloadURL(imageRef);
+  return url;
 }

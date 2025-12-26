@@ -49,8 +49,8 @@ export default function LandingPage() {
                   <p>
                     {t('landing.card1_description')}
                   </p>
-                   <Button asChild variant="outline" className="mt-6 text-[var(--link-color)] hover:text-[var(--link-hover-color)]">
-                        <Link href="/loja?tab=planos">{t('landing.card1_button')}</Link>
+                    <Button asChild variant="outline" className="mt-6 text-[var(--link-color)] hover:text-[var(--link-hover-color)]">
+                        <Link href="/loja?tab=planos" prefetch={false}>{t('landing.card1_button')}</Link>
                     </Button>
                 </CardContent>
               </Card>
@@ -65,8 +65,8 @@ export default function LandingPage() {
                   <p>
                     {t('landing.card2_description')}
                   </p>
-                   <Button asChild variant="outline" className="mt-6 text-[var(--link-color)] hover:text-[var(--link-hover-color)]">
-                        <Link href="/loja?tab=catalogo">{t('landing.card2_button')}</Link>
+                    <Button asChild variant="outline" className="mt-6 text-[var(--link-color)] hover:text-[var(--link-hover-color)]">
+                        <Link href="/loja?tab=catalogo" prefetch={false}>{t('landing.card2_button')}</Link>
                     </Button>
                 </CardContent>
               </Card>
@@ -81,8 +81,8 @@ export default function LandingPage() {
                   <p>
                     {t('landing.card3_description')}
                   </p>
-                   <Button asChild variant="outline" className="mt-6 text-[var(--link-color)] hover:text-[var(--link-hover-color)]">
-                        <Link href="/loja?tab=jogos">{t('landing.card3_button')}</Link>
+                    <Button asChild variant="outline" className="mt-6 text-[var(--link-color)] hover:text-[var(--link-hover-color)]">
+                        <Link href="/loja?tab=jogos" prefetch={false}>{t('landing.card3_button')}</Link>
                     </Button>
                 </CardContent>
               </Card>

@@ -2,7 +2,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    // Allow images from Firebase Storage and R2 public endpoints
+    // Allow images from Firebase Storage and placeholder domain
     remotePatterns: (() => {
       const patterns = [
         {
@@ -11,50 +11,23 @@ const nextConfig = {
           port: '',
           pathname: '/v0/b/biblioangola.appspot.com/o/**',
         },
+        {
+          protocol: 'https',
+          hostname: 'firebasestorage.googleapis.com',
+          port: '',
+          pathname: '/v0/b/biblioangola.firebasestorage.app/o/**',
+        },
+        {
+          protocol: 'https',
+          hostname: 'placehold.co',
+          port: '',
+          pathname: '/**',
+        },
       ];
-      const r2Public = process.env.R2_PUBLIC_BASE_URL;
-      const r2AccountId = process.env.R2_ACCOUNT_ID;
-      try {
-        if (r2Public) {
-          const u = new URL(r2Public);
-          patterns.push({
-            protocol: u.protocol.replace(':', '') as 'http' | 'https',
-            hostname: u.hostname,
-            port: u.port || '',
-            pathname: '/**',
-          });
-        }
-      } catch {}
-      if (r2AccountId) {
-        patterns.push({
-          protocol: 'https',
-          hostname: `pub-${r2AccountId}.r2.dev`,
-          port: '',
-          pathname: '/**',
-        });
-        patterns.push({
-          protocol: 'https',
-          hostname: 'r2.cloudflarestorage.com',
-          port: '',
-          pathname: '/**',
-        });
-      }
       return patterns;
     })(),
     domains: (() => {
-      const domains = ['firebasestorage.googleapis.com'];
-      const r2Public = process.env.R2_PUBLIC_BASE_URL;
-      const r2AccountId = process.env.R2_ACCOUNT_ID;
-      try {
-        if (r2Public) {
-          const u = new URL(r2Public);
-          domains.push(u.hostname);
-        }
-      } catch {}
-      if (r2AccountId) {
-        domains.push(`pub-${r2AccountId}.r2.dev`);
-        domains.push('r2.cloudflarestorage.com');
-      }
+      const domains = ['firebasestorage.googleapis.com', 'placehold.co'];
       return domains;
     })(),
   },

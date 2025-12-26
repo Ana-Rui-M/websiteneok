@@ -1,17 +1,17 @@
 import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 
 export async function GET() {
   try {
-    const gamesCol = collection(db, "games");
-    const gameSnapshot = await getDocs(gamesCol);
+    const productsCol = collection(db, "products");
+    const q = query(productsCol, where("type", "==", "game"));
+    const gameSnapshot = await getDocs(q);
     const gameList = gameSnapshot.docs.map((doc) => {
       const data = doc.data();
-      // Exclude image links
-      const { _images, ...rest } = data; // eslint-disable-line @typescript-eslint/no-unused-vars
-      return rest;
+      const { image, ...rest } = data;
+      return { id: doc.id, ...rest };
     });
 
     const worksheet = XLSX.utils.json_to_sheet(gameList);

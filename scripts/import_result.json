@@ -1,0 +1,1321 @@
+{
+  "message": "Products imported successfully",
+  "results": [
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "XnAoDMTcZVvb1QufqwgV",
+        "price": 5500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "A Viagem do Pai Natal",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "EH4OFPV0oxKgKbjBzhh3",
+        "price": 5000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Estrofes da Bicharada",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "jCQZV5IaEBInTjuGYhIi",
+        "price": 10000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Aventura do Vento",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "NDrriIoEOWXgWGP2kIfk",
+        "price": 5000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "O Menino Que Sonhava",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "qrhCIArBugPyohkWCrKA",
+        "price": 11000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Aquela Nuvem e Outras",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "pSNm0UXhmSet0CTrm07C",
+        "price": 6500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Lengalengas Trava-línguas ...",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "suA5CaoKpkDpkKkBNRsR",
+        "price": 4500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "União Arco-Íris",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "Yr8ozj6n0Z8qd2KDJVrC",
+        "price": 5000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Floki o Flamingo Aventureiro",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "CEXwmgXaM9qryzxvC2SX",
+        "price": 10000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "A Origem das Chuvas",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "ZdR7l4lAMcbbtkEy54GU",
+        "price": 5500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Guilherme o tagarela e as suas amigas",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "SjabNz0pRfGgU0Ir0M0S",
+        "price": 9000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "A quinta dos girassóis",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "q9EzjgiA48JBnLQh69K5",
+        "price": 9500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "A múcua que baloiçava ao vento",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "GrkOxARdnBCAvsQBY7KJ",
+        "price": 12000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "A disputa entre o vento e o sol e outras histórias",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "dYp47vZn1EdTj3dywHeM",
+        "price": 10000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Contos de Andersen",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "vasN6hvag2vFfu3Vlr1v",
+        "price": 5500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Vari the Incredible Giant Sable Antelope",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "4fJoqcf1kxsUbRgD5us6",
+        "price": 5500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Corpos Celestes",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "44Qx8mWZFHilSWDIgt7m",
+        "price": 5000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Cori a Tartaruga em Perigo",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "MJ2m2rc4NP4VDIYJM5Aa",
+        "price": 3500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Tombe o menino da perna mágica",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "kZW9FyxUdUjpt2JuowCS",
+        "price": 7000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Gosto deles porque sim",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "Awtya8qs7iZnomLreBLY",
+        "price": 12500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "A Maior Flor do Mundo (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "EurRXl4nzvqvOIgNkULW",
+        "price": 5500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Duas Abelhas Amigas de um Girassol (capa dura)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "Fd74Y26ZhIuej6kXVCM2",
+        "price": 5500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Muadi the Return of the Elephants",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "PFMJzkIVaoMaasBTGo67",
+        "price": 7500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "O Grande Encontro",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "q5imy7XRPu7KXUq4go6A",
+        "price": 6000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Histórias da Pedrinha do Sol",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "AUXtWK1jNFZNE3PN4awz",
+        "price": 5500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Sona a beleza de um desenho",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "xBXXw7k7tsMaWfZHTbJi",
+        "price": 6000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Os Candengues no Parque da Quissama",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "i9wh4ENQhSMPBwdxpfJ3",
+        "price": 16500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "OU A Bicicleta que tinha bigodes (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "pRaTKaJzJZSrrMdKeBKD",
+        "price": 21000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "A Menina do Mar",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "v2Xr0AmRFJNVxtRvVBDH",
+        "price": 23000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Charlotte's Web (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "pXUAuz19wZYH8SlOTMmR",
+        "price": 6000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Os Candengues no Cemitério dos Barcos",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "J09MAkBQxC7kn8Yw4FUb",
+        "price": 6500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Alex Ponto Com Uma Aventura Virtual",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "75bqR2gwWMlzWwwxa2iY",
+        "price": 9000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "A Lagoa Misteriosa",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "25YBYpe7nw8cbrb6066M",
+        "price": 5000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Em Busca do Mar",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "xWatINuLSjT5Fr0Zv5ox",
+        "price": 10000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "O Principezinho",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "NZcjTPtVucimLxJA80zV",
+        "price": 10000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "A idade da memória",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "P79fCev0jdcIV8lU4yTe",
+        "price": 23000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Matilda (in English) (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "ypsfI4ioI9krSukWt2Yu",
+        "price": 6500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Alex Ponto Com Joe Silicone Vai à Escola",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "OKTwlhfPLPja6PuvwtF4",
+        "price": 15000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Uma escuridão bonita (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "69dgclyCgDsOv55yuHfm",
+        "price": 11000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Dicionário B Ilustrado Língua Portuguesa",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "6NZ8NpqjaTCNKeDQi6AO",
+        "price": 11000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Dicionário Básico da Língua Portuguesa",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "HyCqelbX7uifF5jrh3SR",
+        "price": 13000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Dicionário B Ilustrado Ing-Pt/ Pt-Ing",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "lGg7muGH09sIWirIsVrE",
+        "price": 16500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Dicionário Ing-Pt / Pt-Ing Escolar",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "DM0EBLakVfAiZ87LJeqs",
+        "price": 5000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Tabuada para todos",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "37hLc68IT0v0TLbW30x2",
+        "price": 7000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Gramática Escolar",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "IkMA3cyiA3jkgHkNzCa4",
+        "price": 4000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Gramática Júnior",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "pzTLKULKyS9cKZQFZpjc",
+        "price": 4500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Júnior Atlas Escolar",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "XtA2AykvKdiwc0gc8fLf",
+        "price": 8000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Atlas Escolar de Angola (A5)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "ehYEc1puTLZ2KcTsUAq1",
+        "price": 13000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Nova Gramática da Abelhinha 3a e 4a classe",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "tL015tEYR1yhLoYKGaYE",
+        "price": 15500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Gramática de a português 5a e 6a classe",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "hjimrpWefHOwQ2MKTNnz",
+        "price": 45000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Melódica Azul (A Importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "Lr3tZqtVXjoWYKjqfz1d",
+        "price": 45000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Melódica Vermelha (A Importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "UMnyg1VTqRQVRMFpvmDj",
+        "price": 45000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Melódica Preta (A Importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "mHt7XejAVhUpdGLBW0Sx",
+        "price": 3000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Flauta",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "En4KLTcGBOu3lnioxb79",
+        "price": 5000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Tubo de Melódica (sem melódica)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "WsN0YSjIupGBRGgrj7N8",
+        "price": 6000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Quem me dera ser onda",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "aTZAJqmfv8pfSiROpEri",
+        "price": 6500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Fábulas de Sanji",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "tixFzuYxQt1FDSB7ugoS",
+        "price": 22000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "O Cavaleiro da Dinamarca",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "ho94MYTss9CztYwYEhup",
+        "price": 23500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Adventures of Huckleberry Finn (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "Rujc7RZHDffB0hjZAjti",
+        "price": 19000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "As Aventuras de Tom Sawyer",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "vC2wDkfCnHp68iNpSKLY",
+        "price": 6500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Alex Ponto com Mary Lob Lagosta",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "KKwVdM7jkZDFMKsV9TIi",
+        "price": 25000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "História de uma gaivota e do gato que a ensinou a voar (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "HUy2wsP6ilVesGjwZyIb",
+        "price": 13000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "O Gato Malhado e a Andorinha (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "nCUew03hkZOqarSE1t79",
+        "price": 10000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Os da minha rua",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "oyFtBxrQXPaZy0csFt3M",
+        "price": 26000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Harry Potter and the Philosopher's Stone (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "F7msXKLdVKhNdJWxSn0j",
+        "price": 6500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Poemas com Cacimbo e Pássaros",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "fDh7ApAUoNXkUlpV9Fox",
+        "price": 6000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Undengue",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "djblIxhOmuP4MUflfBwY",
+        "price": 9000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Parábola do cágado velho",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "A8gW5Zhw3YkAy5zYcTGo",
+        "price": 20000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Avó Dezanove e o Segredo do Soviético (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "xK9DbN4joh1ntjBJjZNp",
+        "price": 15000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Fantasma de Canterville e outros contos (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "CSEwDFHXKMTGD5A2csiU",
+        "price": 24500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Wonder (a importar )",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "BS1fFboZ3zBw3qMce6WC",
+        "price": 5000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Do rio ao mar",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "Xr0nwxlUXd1czISB0iS8",
+        "price": 28500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "A rainha Ginga",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "0JTwLsT2wpWuLUeHoHHK",
+        "price": 17000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Dom Casmurro (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "wQEDasxNqNIsBiGxHmlm",
+        "price": 24500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Morte no Nilo (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "7pRp6NWbeHtWxMYEGJkB",
+        "price": 27000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "To Kill a Mockingbird (a importar )",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "K3PSrl5sVigdwUU6xLXd",
+        "price": 20500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "1984 (alunos de direito)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "bRJzEDzVrdwQ0EB2qPFu",
+        "price": 15500,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "O retrato de Dorian Gray (a importar )",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "TrLkv9wlYGPxX9HTrrxS",
+        "price": 33000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Esaú e Jacob (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "tE08rclQr57RUHwszqBC",
+        "price": 27000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "O Vendedor de passados",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "vWH2jTUC1yOUeIPMCySW",
+        "price": 29000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Nervous Conditions (a importar )",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "4FFNhhv66hNFckZzi6Ok",
+        "price": 10000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Manana",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "rlDdT45NFWHpGT4YTgBP",
+        "price": 15000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Um Crime no Expresso do Oriente (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "NPmQs3hC8XgdQM2QqSWe",
+        "price": 13000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Auto da Barca do Inferno",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "M98olrYv03YdhuzoHkCb",
+        "price": 30000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Things Fall Apart (a importar)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "hbGr7o38RIHyGpOQ0Mfh",
+        "price": 10000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Esse Cabelo",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "Z5dfHUGSetlJFgYkv9XL",
+        "price": 15000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Teoria Geral do Esquecimento",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "GcKKmCck8g4Ig1npI44u",
+        "price": 6000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "O Feitiço da Rama de Abóbora",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "yDWYXxGh0QNQlcUrWEBL",
+        "price": 29000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "A nossa Gramática Ensino Secundário",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "8KIFu04vVKP8dmI9ayEM",
+        "price": 38000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Gramática Elementar 2o ciclo",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "19EWjt9iebvEq5i1n8NJ",
+        "price": 15000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Atlas de Angola (A4)",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "qPnzLibfBdfBU3YBDUa2",
+        "price": 9000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Dicionário Fundamental Língua Portuguesa",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "hZFYzBb9lyHg7T0DDggr",
+        "price": 20000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Dicionário Integral da Língua Portuguesa",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "VPh7SuPmjzUwxOyLUPV8",
+        "price": 5000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Dicionário Verbos mais Gramática Língua Inglesa",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    },
+    {
+      "status": "added",
+      "message": "Product added successfully",
+      "data": {
+        "id": "nnXriTrEeyCosp1jV7iu",
+        "price": 10000,
+        "stock": 5,
+        "type": "book",
+        "stockStatus": "in_stock",
+        "name": "Prontuário de Português",
+        "category": "Infantis Angolanos",
+        "image": "https://placehold.co/600x400.png"
+      }
+    }
+  ]
+}

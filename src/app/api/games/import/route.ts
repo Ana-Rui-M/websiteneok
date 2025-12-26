@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { firestore } from "@/lib/firebase-admin";
 import { ProductSchema } from "@/lib/types";
-import * as XLSX from 'xlsx';
+import { Query } from "firebase-admin/firestore";
+import * as XLSX from "xlsx";
 
 export async function POST(request: Request) {
   try {
@@ -13,46 +14,41 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const workbook = XLSX.read(buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const jsonData: any[] = XLSX.utils.sheet_to_json(sheet);
-
-    console.log("Parsed Excel data:", JSON.stringify(jsonData.slice(0, 2)));
 
     const batch = firestore.batch();
     const productsCollection = firestore.collection("products");
 
     const importResults: { status: string; message: string; data: any }[] = [];
 
-    const categoriesSnapshot = await firestore.collection("categories").get();
-    const defaultBookCategory = categoriesSnapshot.docs.find(d => {
-      const data = d.data() as any;
-      return (data.type === 'book');
-    })?.id || "";
+    const categoriesSnapshot = await firestore.collection("categories").where("type", "==", "game").get();
+    const defaultGameCategory = categoriesSnapshot.docs[0]?.id || "";
 
     for (const row of jsonData) {
       try {
         let nameStr: string | undefined;
-        if (typeof row.name === 'string' && row.name.trim().length > 0) {
+        if (typeof row.name === "string" && row.name.trim().length > 0) {
           nameStr = String(row.name).trim();
-        } else if (row.name && typeof row.name === 'object') {
+        } else if (row.name && typeof row.name === "object") {
           const pt = row.name.pt ?? "";
           const en = row.name.en ?? "";
           const merged = String(pt || en).trim();
           if (merged.length > 0) nameStr = merged;
-        } else if (typeof row.title === 'string' && row.title.trim().length > 0) {
+        } else if (typeof row.title === "string" && row.title.trim().length > 0) {
           nameStr = String(row.title).trim();
         }
 
-        const descriptionStr = typeof row.description === 'string' && row.description.trim().length > 0
+        const descriptionStr = typeof row.description === "string" && row.description.trim().length > 0
           ? String(row.description).trim()
           : undefined;
 
         let price = 0;
         if (row.price !== undefined && row.price !== null) {
-          price = typeof row.price === 'string'
-            ? parseFloat(String(row.price).replace(/[^\d.-]/g, ''))
+          price = typeof row.price === "string"
+            ? parseFloat(String(row.price).replace(/[^\d.-]/g, ""))
             : parseFloat(String(row.price));
           if (isNaN(price)) price = 0;
         }
@@ -60,8 +56,8 @@ export async function POST(request: Request) {
         let stock = 5;
         const stockSource = row.stock ?? row.unit;
         if (stockSource !== undefined && stockSource !== null) {
-          stock = typeof stockSource === 'string'
-            ? parseInt(String(stockSource).replace(/[^\d-]/g, ''), 10)
+          stock = typeof stockSource === "string"
+            ? parseInt(String(stockSource).replace(/[^\d-]/g, ""), 10)
             : parseInt(String(stockSource), 10);
           if (isNaN(stock)) stock = 0;
         }
@@ -70,32 +66,29 @@ export async function POST(request: Request) {
         if (row.image) {
           imageVal = row.image;
         } else if (row.images) {
-          if (typeof row.images === 'string') {
-            imageVal = row.images.split(',').map((img: string) => img.trim()).filter(Boolean);
+          if (typeof row.images === "string") {
+            imageVal = row.images.split(",").map((img: string) => img.trim()).filter(Boolean);
           } else {
             imageVal = row.images;
           }
         } else {
-          imageVal = 'https://placehold.co/600x400.png';
+          imageVal = "https://placehold.co/600x400.png";
         }
 
         const categoryVal: string = (row.category && String(row.category).trim().length > 0)
           ? String(row.category).trim()
-          : defaultBookCategory;
+          : defaultGameCategory;
 
         const publisherVal: string = (row.publisher && String(row.publisher).trim().length > 0)
           ? String(row.publisher).trim()
           : (row.author && String(row.author).trim().length > 0 ? String(row.author).trim() : "");
 
-        const typeVal: "book" | "game" = row.type === 'game' ? 'game' : 'book';
-        const stockStatusVal: 'in_stock' | 'out_of_stock' | 'sold_out' = (row.stockStatus === 'out_of_stock' || row.stockStatus === 'sold_out') ? row.stockStatus : 'in_stock';
-
         const productData: any = {
           id: row.id,
           price,
           stock,
-          type: typeVal,
-          stockStatus: stockStatusVal,
+          type: "game",
+          stockStatus: "in_stock",
         };
         if (nameStr) productData.name = nameStr;
         if (descriptionStr) productData.description = descriptionStr;
@@ -103,10 +96,7 @@ export async function POST(request: Request) {
         if (publisherVal) productData.publisher = publisherVal;
         if (imageVal) productData.image = imageVal;
 
-        console.log("Processing row:", JSON.stringify(productData));
-
         const validation = ProductSchema.partial().safeParse(productData);
-
         if (!validation.success) {
           importResults.push({
             status: "failed",
@@ -119,15 +109,14 @@ export async function POST(request: Request) {
         if (row.id) {
           const productRef = productsCollection.doc(row.id);
           batch.update(productRef, productData);
-          importResults.push({ status: "updated", message: "Product updated successfully", data: productData });
+          importResults.push({ status: "updated", message: "Game updated successfully", data: productData });
         } else {
           const productRef = productsCollection.doc();
           productData.id = productRef.id;
           batch.set(productRef, productData);
-          importResults.push({ status: "added", message: "Product added successfully", data: productData });
+          importResults.push({ status: "added", message: "Game added successfully", data: productData });
         }
       } catch (rowError) {
-        console.error("Error processing row:", row, rowError);
         importResults.push({
           status: "failed",
           message: `Error processing row: ${rowError instanceof Error ? rowError.message : String(rowError)}`,
@@ -137,12 +126,14 @@ export async function POST(request: Request) {
     }
 
     await batch.commit();
-    return NextResponse.json({ message: "Products imported successfully", results: importResults }, { status: 200 });
+    return NextResponse.json({ message: "Games imported successfully", results: importResults }, { status: 200 });
   } catch (error) {
-    console.error("Error importing products:", error);
-    return NextResponse.json({ 
-      error: `Failed to import products: ${error instanceof Error ? error.message : String(error)}`,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: `Failed to import games: ${error instanceof Error ? error.message : String(error)}`,
+        stack: process.env.NODE_ENV === "development" ? (error as any).stack : undefined,
+      },
+      { status: 500 }
+    );
   }
 }

@@ -10,6 +10,7 @@ import { useLanguage } from "@/context/language-context";
 import { getDisplayName } from "@/lib/utils";
 import { normalizeImageUrl } from "@/lib/utils";
 import Image from "next/image";
+import { useState } from "react";
 
 interface CartItemProps {
   item: CartItemType;
@@ -19,6 +20,7 @@ interface CartItemProps {
 export default function CartItem({ item, isKitItem = false }: CartItemProps) {
   const { updateQuantity, removeFromCart } = useCart();
   const { t, language } = useLanguage();
+  const [imageError, setImageError] = useState(false);
 
   const handleQuantityChange = (change: number) => {
     // For kit items, we don't allow quantity change from the cart view
@@ -33,19 +35,13 @@ export default function CartItem({ item, isKitItem = false }: CartItemProps) {
     <div className="flex items-start gap-4">
       <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border">
         <Image
-          src={displayImage}
+          src={imageError ? "https://placehold.co/600x400.png" : displayImage}
           alt={getDisplayName(item.name, language)}
           fill
           className="object-cover w-full h-full"
           sizes="96px"
           data-ai-hint={item.dataAiHint}
-          onError={(e) => {
-            const target = e.currentTarget as HTMLImageElement;
-            if (!(target as any).dataset?.fallbackApplied) {
-              (target as any).dataset = { ...(target as any).dataset, fallbackApplied: "true" };
-              target.src = "https://placehold.co/600x400.png";
-            }
-          }}
+          onError={() => setImageError(true)}
         />
       </div>
       <div className="flex flex-1 flex-col gap-1">

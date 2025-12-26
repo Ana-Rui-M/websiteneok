@@ -1,61 +1,37 @@
 
 import { Suspense } from 'react';
-import { headers } from 'next/headers';
 import { ShopPageContent } from '@/components/shop-page-content';
 import Header from '@/components/header';
 import { DataProvider } from '@/context/data-context';
+import { firestore } from '@/lib/firebase-admin';
 
 // Avoid prerendering Loja at build time; fetch data on request.
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 async function getShopData() {
-  // Build absolute URLs using the current request headers to ensure
-  // server-side fetch hits the correct origin in all environments.
-  const hdrs = await headers();
-  const host = hdrs.get('x-forwarded-host') || hdrs.get('host') || '';
-  const proto = hdrs.get('x-forwarded-proto') || 'https';
-  const origin = host ? `${proto}://${host}` : '';
-  const url = (path: string) => (origin ? `${origin}${path}` : path);
+  const [
+    schoolsSnapshot,
+    productsSnapshot,
+    readingPlanSnapshot,
+    categoriesSnapshot,
+  ] = await Promise.all([
+    firestore.collection('schools').get(),
+    firestore.collection('products').get(),
+    firestore.collection('readingPlan').get(),
+    firestore.collection('categories').get(),
+  ]);
 
-  // Fetch all resources in parallel, but do not fail the whole page
-  // if one endpoint has an issue. Prefer fresh data without caching.
-  const requests = [
-    fetch(url('/api/schools'), { cache: 'no-store' }),
-    fetch(url('/api/products'), { cache: 'no-store' }),
-    fetch(url('/api/reading-plan'), { cache: 'no-store' }),
-    fetch(url('/api/categories'), { cache: 'no-store' }),
-  ];
-
-  const [schoolsRes, productsRes, readingPlanRes, categoriesRes] = await Promise.allSettled(requests);
-
-  const safeJson = async (res: Response | null, label: string) => {
-    try {
-      if (res && res.ok) return await res.json();
-      const status = res ? res.status : 'no-response';
-      console.warn(`[loja] ${label} fetch not ok`, status);
-      return [];
-    } catch (err) {
-      console.error(`[loja] ${label} parse error`, err);
-      return [];
-    }
-  };
-
-  const schoolsData = await safeJson(
-    schoolsRes.status === 'fulfilled' ? schoolsRes.value : null,
-    'schools'
-  );
-  const productsData = await safeJson(
-    productsRes.status === 'fulfilled' ? productsRes.value : null,
-    'products'
-  );
-  const readingPlanData = await safeJson(
-    readingPlanRes.status === 'fulfilled' ? readingPlanRes.value : null,
-    'reading-plan'
-  );
-  const categoriesData = await safeJson(
-    categoriesRes.status === 'fulfilled' ? categoriesRes.value : null,
-    'categories'
-  );
+  const schoolsData = schoolsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const productsData = productsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const readingPlanData = readingPlanSnapshot.docs.map((doc) => doc.data());
+  const categoriesData = categoriesSnapshot.docs.map((doc) => {
+    const data = doc.data() as any;
+    const name = typeof data.name === 'object'
+      ? data.name
+      : { pt: data.ptName || data.name || '', en: data.name || data.ptName || '' };
+    const type = data.type === 'game' ? 'game' : 'book';
+    return { id: doc.id, name, type };
+  });
 
   return { schoolsData, productsData, readingPlanData, categoriesData };
 }
@@ -87,4 +63,4 @@ export default async function LojaPage() {
     </div>
   );
 }
-
+

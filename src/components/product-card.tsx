@@ -17,6 +17,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { useLanguage } from "@/context/language-context";
 import { normalizeImageUrl } from "@/lib/utils";
 import Image from "next/image";
+import { useState } from "react";
 
 interface ProductCardProps {
   product: Product;
@@ -26,6 +27,8 @@ interface ProductCardProps {
 export default function ProductCard({ product, productBadgeRenderer }: ProductCardProps) {
   const { addToCart } = useCart();
   const { t, language } = useLanguage();
+  const [imageError, setImageError] = useState(false);
+  const [carouselErrors, setCarouselErrors] = useState<Record<number, boolean>>({});
   
   const displayName = typeof product.name === 'string'
     ? product.name
@@ -51,17 +54,11 @@ export default function ProductCard({ product, productBadgeRenderer }: ProductCa
                     <div className="relative h-48 w-full overflow-hidden">
                       <Image
                         alt={`${displayName} image ${index + 1}`}
-                        src={normalizeImageUrl(img)}
+                        src={carouselErrors[index] ? "https://placehold.co/600x400.png" : normalizeImageUrl(img)}
                         fill
                         className="h-full w-full object-cover"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        onError={(e) => {
-                          const target = e.currentTarget as HTMLImageElement;
-                          if (!(target as any).dataset?.fallbackApplied) {
-                            (target as any).dataset = { ...(target as any).dataset, fallbackApplied: "true" };
-                            target.src = "https://placehold.co/600x400.png";
-                          }
-                        }}
+                        onError={() => setCarouselErrors(prev => ({ ...prev, [index]: true }))}
                         data-ai-hint={product.dataAiHint}
                       />
                     </div>
@@ -80,17 +77,11 @@ export default function ProductCard({ product, productBadgeRenderer }: ProductCa
             <Image
               alt={`${displayName || ''} image ${0 + 1}`}
               className="object-cover w-full h-full"
-              src={displayImage}
+              src={imageError ? "https://placehold.co/600x400.png" : displayImage}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               data-ai-hint={product.dataAiHint}
-              onError={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                if (!(target as any).dataset?.fallbackApplied) {
-                  (target as any).dataset = { ...(target as any).dataset, fallbackApplied: "true" };
-                  target.src = "https://placehold.co/600x400.png";
-                }
-              }}
+              onError={() => setImageError(true)}
             />
           </div>
         )}
