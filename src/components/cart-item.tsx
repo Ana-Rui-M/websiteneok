@@ -9,6 +9,7 @@ import { Minus, Plus, X } from "lucide-react";
 import { useLanguage } from "@/context/language-context";
 import { getDisplayName } from "@/lib/utils";
 import { normalizeImageUrl } from "@/lib/utils";
+import Image from "next/image";
 
 interface CartItemProps {
   item: CartItemType;
@@ -31,15 +32,17 @@ export default function CartItem({ item, isKitItem = false }: CartItemProps) {
   return (
     <div className="flex items-start gap-4">
       <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border">
-        <img
+        <Image
           src={displayImage}
           alt={getDisplayName(item.name, language)}
+          fill
           className="object-cover w-full h-full"
+          sizes="96px"
           data-ai-hint={item.dataAiHint}
           onError={(e) => {
-            const target = e.currentTarget;
-            if (!target.dataset.fallbackApplied) {
-              target.dataset.fallbackApplied = "true";
+            const target = e.currentTarget as HTMLImageElement;
+            if (!(target as any).dataset?.fallbackApplied) {
+              (target as any).dataset = { ...(target as any).dataset, fallbackApplied: "true" };
               target.src = "https://placehold.co/600x400.png";
             }
           }}

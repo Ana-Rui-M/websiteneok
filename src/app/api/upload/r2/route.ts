@@ -60,17 +60,15 @@ export async function POST(req: NextRequest) {
     await client.send(put);
 
     const publicBase = process.env.R2_PUBLIC_BASE_URL;
-    if (!publicBase) {
-      // If no public base configured, return the object key and bucket so caller can construct URL
-      return NextResponse.json({
-        message: 'Uploaded to R2',
-        bucket,
-        key,
-        url: null,
-      }, { status: 200 });
+    let url: string | null = null;
+    if (publicBase && publicBase.length > 0) {
+      url = `${publicBase.replace(/\/$/,'')}/${key}`;
+    } else {
+      const accountId = process.env.R2_ACCOUNT_ID;
+      if (accountId && accountId.length > 0) {
+        url = `https://pub-${accountId}.r2.dev/${bucket}/${key}`;
+      }
     }
-
-    const url = `${publicBase.replace(/\/$/,'')}/${key}`;
 
     return NextResponse.json({ message: 'Uploaded to R2', url, key }, { status: 200 });
   } catch (err: any) {

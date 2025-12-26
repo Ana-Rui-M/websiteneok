@@ -41,7 +41,13 @@ export function normalizeImageUrl(image?: string): string {
 
       const params = new URLSearchParams(rest);
       const token = params.get('token') || '';
-      const finalQuery = token ? `alt=media&token=${token}` : 'alt=media';
+      const downloadTokens = params.get('downloadTokens') || '';
+      let finalQuery = 'alt=media';
+      if (token) {
+        finalQuery = `${finalQuery}&token=${token}`;
+      } else if (downloadTokens) {
+        finalQuery = `${finalQuery}&downloadTokens=${downloadTokens}`;
+      }
       return `${base}?${finalQuery}`;
     }
 

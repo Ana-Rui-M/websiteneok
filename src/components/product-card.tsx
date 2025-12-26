@@ -16,6 +16,7 @@ import { useCart } from "@/context/cart-context";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useLanguage } from "@/context/language-context";
 import { normalizeImageUrl } from "@/lib/utils";
+import Image from "next/image";
 
 interface ProductCardProps {
   product: Product;
@@ -48,20 +49,20 @@ export default function ProductCard({ product, productBadgeRenderer }: ProductCa
               {product.image.map((img: string, index: number) => (
                  <CarouselItem key={index}>
                     <div className="relative h-48 w-full overflow-hidden">
-                      <img
+                      <Image
                         alt={`${displayName} image ${index + 1}`}
-                        className="h-full w-full object-cover"
-                        height="400"
                         src={normalizeImageUrl(img)}
-                        width="600"
-                        data-ai-hint={product.dataAiHint}
+                        fill
+                        className="h-full w-full object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         onError={(e) => {
-                          const target = e.currentTarget;
-                          if (!target.dataset.fallbackApplied) {
-                            target.dataset.fallbackApplied = "true";
+                          const target = e.currentTarget as HTMLImageElement;
+                          if (!(target as any).dataset?.fallbackApplied) {
+                            (target as any).dataset = { ...(target as any).dataset, fallbackApplied: "true" };
                             target.src = "https://placehold.co/600x400.png";
                           }
                         }}
+                        data-ai-hint={product.dataAiHint}
                       />
                     </div>
                 </CarouselItem>
@@ -76,15 +77,17 @@ export default function ProductCard({ product, productBadgeRenderer }: ProductCa
           </Carousel>
         ) : (
            <div className="relative h-48 w-full overflow-hidden">
-            <img
+            <Image
               alt={`${displayName || ''} image ${0 + 1}`}
               className="object-cover w-full h-full"
               src={displayImage}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               data-ai-hint={product.dataAiHint}
               onError={(e) => {
-                const target = e.currentTarget;
-                if (!target.dataset.fallbackApplied) {
-                  target.dataset.fallbackApplied = "true";
+                const target = e.currentTarget as HTMLImageElement;
+                if (!(target as any).dataset?.fallbackApplied) {
+                  (target as any).dataset = { ...(target as any).dataset, fallbackApplied: "true" };
                   target.src = "https://placehold.co/600x400.png";
                 }
               }}

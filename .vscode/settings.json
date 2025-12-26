@@ -1,0 +1,9 @@
+{
+  "git.enabled": true,
+  "git.autoRepositoryDetection": "openEditors",
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.git/**": false
+  }
+}
