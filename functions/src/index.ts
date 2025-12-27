@@ -1,18 +1,12 @@
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import * as nodemailer from "nodemailer";
+import { defineString } from "firebase-functions/params";
 
 admin.initializeApp();
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: functions.config().gmail.email,
-    pass: functions.config().gmail.password,
-  },
-});
+const gmailEmailParam = defineString("GMAIL_EMAIL");
+const gmailPasswordParam = defineString("GMAIL_PASSWORD");
 
 export const sendOrderConfirmationEmail = functions.firestore
   .document("orders/{orderId}")
@@ -23,6 +17,20 @@ export const sendOrderConfirmationEmail = functions.firestore
       console.log("No order data found.");
       return null;
     }
+
+    const gmailUser: string | undefined = gmailEmailParam.value() || process.env.GMAIL_EMAIL;
+    const gmailPass: string | undefined = gmailPasswordParam.value() || process.env.GMAIL_PASSWORD;
+    const transporter: nodemailer.Transporter = (gmailUser && gmailPass)
+      ? nodemailer.createTransport({
+          host: "smtp.gmail.com",
+          port: 465,
+          secure: true,
+          auth: {
+            user: gmailUser,
+            pass: gmailPass,
+          },
+        })
+      : nodemailer.createTransport({ jsonTransport: true });
 
     const mailOptions = {
       from: "NEOKUDILONGA <noreply@neokudilonga.com>",
