@@ -13,5 +13,8 @@
       ],
       "alwaysDeployFromSource": true
     }
-  ]
+  ],
+  "functions": {
+    "source": "functions"
+  }
 }
