@@ -55,11 +55,11 @@ export function AdminSidebarMenu() {
                 <SidebarMenuButton
                 asChild
                 isActive={isPartiallyActive("/admin/games")}
-                tooltip={'Games'}
+                tooltip={t('games_page.title')}
                 >
                 <Link href="/admin/games">
                     <Gamepad2 />
-                    <span>{'Games'}</span>
+                    <span>{t('games_page.title')}</span>
                 </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>

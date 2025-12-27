@@ -109,6 +109,7 @@ export const pt = {
     stock: 'Stock',
     category: 'Categoria',
     publisher: 'Editora',
+    author: 'Autor',
     image: 'Imagem',
     status: 'Estado',
     reading_plan: 'Plano de Leitura',

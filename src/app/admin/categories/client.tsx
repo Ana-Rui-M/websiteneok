@@ -43,11 +43,12 @@ interface CategoriesPageClientProps {
 }
 
 export default function CategoriesPageClient({ initialCategories }: CategoriesPageClientProps) {
-  const { categories, addCategory, deleteCategory, setCategories } = useData();
+  const { categories, addCategory, deleteCategory, setCategories, updateCategory } = useData();
   const { t, language } = useLanguage(); // eslint-disable-line @typescript-eslint/no-unused-vars
   const [newCategoryNamePT, setNewCategoryNamePT] = useState('');
   const [newCategoryNameEN, setNewCategoryNameEN] = useState('');
   const [newCategoryType, setNewCategoryType] = useState<'book' | 'game'>('book');
+  const [editing, setEditing] = useState<{ id: string; pt: string; en: string; type: 'book' | 'game' } | null>(null);
 
   useEffect(() => {
     setCategories(initialCategories);
@@ -73,6 +74,19 @@ export default function CategoriesPageClient({ initialCategories }: CategoriesPa
 
   const handleDeleteCategory = (categoryToDelete: { pt: string; en: string }) => {
     deleteCategory(categoryToDelete);
+  };
+
+  const handleStartEdit = (category: Category) => {
+    const pt = typeof category.name === 'object' ? category.name.pt : String(category.name || '');
+    const en = typeof category.name === 'object' ? category.name.en : String(category.name || '');
+    setEditing({ id: category.id || pt, pt, en, type: category.type || 'book' });
+  };
+  const handleConfirmEdit = async () => {
+    if (!editing) return;
+    const prevId = editing.id;
+    const next: Category = { id: editing.pt, name: { pt: editing.pt, en: editing.en }, type: editing.type };
+    await updateCategory(prevId, next);
+    setEditing(null);
   };
 
 
@@ -178,6 +192,9 @@ export default function CategoriesPageClient({ initialCategories }: CategoriesPa
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
+                        <Button variant="outline" size="sm" className="ml-2" onClick={() => handleStartEdit(category)}>
+                          Editar
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
@@ -187,6 +204,39 @@ export default function CategoriesPageClient({ initialCategories }: CategoriesPa
           </Table>
         </CardContent>
       </Card>
+      {editing && (
+        <AlertDialog open onOpenChange={(o) => !o && setEditing(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Editar Categoria</AlertDialogTitle>
+              <AlertDialogDescription>Atualize os nomes e o tipo.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="grid gap-3">
+              <div>
+                <Label>Nome (PT)</Label>
+                <Input value={editing.pt} onChange={(e) => setEditing({ ...editing, pt: e.target.value })} />
+              </div>
+              <div>
+                <Label>Nome (EN)</Label>
+                <Input value={editing.en} onChange={(e) => setEditing({ ...editing, en: e.target.value })} />
+              </div>
+              <div>
+                <Label>{t('categories_page.category_type') || 'Tipo'}</Label>
+                <RadioGroup value={editing.type} onValueChange={(v) => setEditing({ ...editing, type: v as 'book' | 'game' })} className="flex flex-row gap-2 mt-2">
+                  <RadioGroupItem value="book" id="book_edit" />
+                  <Label htmlFor="book_edit">{t('common.book') || 'Livro'}</Label>
+                  <RadioGroupItem value="game" id="game_edit" />
+                  <Label htmlFor="game_edit">{t('common.game') || 'Jogo'}</Label>
+                </RadioGroup>
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmEdit}>{t('common.save_changes')}</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </>
   );
 }

@@ -33,12 +33,14 @@ interface DataContextType {
   categories: Category[];
   setCategories: (categories: Category[]) => void;
   addCategory: (category: Category) => Promise<void>;
+  updateCategory: (prevId: string, next: Category) => Promise<void>;
   deleteCategory: (categoryName: { pt: string; en: string } | string) => Promise<void>;
 
   // Publishers
   publishers: string[];
   setPublishers: (publishers: string[]) => void;
   addPublisher: (publisher: string) => Promise<void>;
+  updatePublisher: (prevName: string, nextName: string) => Promise<void>;
   deletePublisher: (publisherName: string) => Promise<void>;
 
   // Orders
@@ -263,7 +265,8 @@ export const DataProvider = ({
         body: JSON.stringify(category),
       });
       if (!response.ok) throw new Error('Failed to add category');
-      // Refetch categories from backend
+      const optimistic = [...categories, { ...category }];
+      setCategories(optimistic);
       const updated = await fetch('/api/categories');
       const updatedCategories = await updated.json();
       setCategories(updatedCategories);
@@ -275,13 +278,42 @@ export const DataProvider = ({
       setLoading(false);
     }
   };
+  const updateCategory = async (prevId: string, next: Category) => {
+    setLoading(true);
+    try {
+      const optimistic = categories.map(c => {
+        const matchById = c.id && prevId && c.id === prevId;
+        const matchByName = !c.id && (c.name?.pt === prevId || c.name?.en === prevId);
+        if (matchById || matchByName) return { ...next };
+        return c;
+      });
+      setCategories(optimistic);
+      const response = await fetch(`/api/categories/${encodeURIComponent(prevId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: next.name, type: next.type }),
+      });
+      if (!response.ok) throw new Error('Failed to update category');
+      const updated = await fetch('/api/categories');
+      const updatedCategories = await updated.json();
+      setCategories(updatedCategories);
+      toast({ title: "Category Updated", description: `${next.name[language]} was updated successfully.` });
+    } catch (error) {
+      console.error(error);
+      const updated = await fetch('/api/categories');
+      const updatedCategories = await updated.json();
+      setCategories(updatedCategories);
+      toast({ title: "Error", description: "Could not update category.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
   const deleteCategory = async (categoryName: { pt: string; en: string } | string) => {
     setLoading(true);
     try {
-      // Always resolve to a string for deletion and UI
       let nameToDelete: string;
       if (typeof categoryName === 'object' && categoryName !== null) {
-        nameToDelete = categoryName[language] || categoryName.pt || categoryName.en;
+        nameToDelete = categoryName.pt || categoryName.en;
       } else {
         nameToDelete = categoryName;
       }
@@ -289,7 +321,6 @@ export const DataProvider = ({
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete category');
-      // Refetch categories from backend
       const updated = await fetch('/api/categories');
       const updatedCategories = await updated.json();
       setCategories(updatedCategories);
@@ -312,16 +343,41 @@ export const DataProvider = ({
         body: JSON.stringify({ name: publisher }),
       });
       if (!response.ok) throw new Error('Failed to add publisher');
-  // Refetch publishers from backend
-  const updated = await fetch('/api/publishers');
-  const updatedPublishers = await updated.json();
-  setPublishers(updatedPublishers);
+      const optimistic = [...publishers, publisher];
+      setPublishers(optimistic);
+      const updated = await fetch('/api/publishers');
+      const updatedPublishers = await updated.json();
+      setPublishers(updatedPublishers);
       toast({ title: "Publisher Added", description: `${publisher} was added successfully.` });
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "Could not add publisher.", variant: "destructive" });
     } finally {
         setLoading(false);
+    }
+  }
+  const updatePublisher = async (prevName: string, nextName: string) => {
+    setLoading(true);
+    try {
+      setPublishers(publishers.map(p => (p === prevName ? nextName : p)));
+      const response = await fetch(`/api/publishers/${encodeURIComponent(prevName)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nextName }),
+      });
+      if (!response.ok) throw new Error('Failed to update publisher');
+      const updated = await fetch('/api/publishers');
+      const updatedPublishers = await updated.json();
+      setPublishers(updatedPublishers);
+      toast({ title: "Publisher Updated", description: `${nextName} was updated successfully.` });
+    } catch (error) {
+      console.error(error);
+      const updated = await fetch('/api/publishers');
+      const updatedPublishers = await updated.json();
+      setPublishers(updatedPublishers);
+      toast({ title: "Error", description: "Could not update publisher.", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   }
   const deletePublisher = async (publisherName: string) => {
@@ -441,6 +497,8 @@ export const DataProvider = ({
         categories, setCategories, addCategory, deleteCategory,
         publishers, setPublishers, addPublisher, deletePublisher,
         orders, setOrders, submitOrder, addOrder, updateOrderPaymentStatus, updateOrderDeliveryStatus, deleteOrder,
+        updateCategory,
+        updatePublisher,
       }}
     >
       {children}

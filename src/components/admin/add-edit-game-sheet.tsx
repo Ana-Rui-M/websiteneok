@@ -61,7 +61,7 @@ const gameBaseSchema = z.object({
       pt: z.string().min(10, "A descrição em Português deve ter pelo menos 10 caracteres."),
       en: z.string().min(10, "A descrição em Inglês deve ter pelo menos 10 caracteres."),
     }),
-  ]),
+  ]).optional(),
   price: z.coerce.number().min(0, "O preço deve ser um número positivo."),
   stock: z.coerce.number().min(0, "O stock deve ser um número positivo."),
   stockStatus: z.enum(['in_stock', 'out_of_stock', 'sold_out']),

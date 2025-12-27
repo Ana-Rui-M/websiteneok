@@ -56,11 +56,12 @@ const bookBaseSchema = z.object({
       pt: z.string().min(10, "A descrição em Português deve ter pelo menos 10 caracteres."),
       en: z.string().min(10, "A descrição em Inglês deve ter pelo menos 10 caracteres."),
     }),
-  ]),
+  ]).optional(),
   price: z.coerce.number().min(0, "O preço deve ser um número positivo."),
   stock: z.coerce.number().min(0, "O stock deve ser um número positivo."),
   category: z.string().min(1, "A categoria é obrigatória."),
   publisher: z.string().optional(),
+  author: z.string().optional(),
   stockStatus: z.enum(['in_stock', 'out_of_stock', 'sold_out']),
   image: z.union([z.string(), z.array(z.string())]).optional(),
   readingPlan: z.array(readingPlanItemSchema).optional(),
@@ -99,6 +100,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
       stock: 0,
       category: "",
       publisher: "",
+      author: "",
       stockStatus: 'in_stock',
       image: "",
       readingPlan: [],
@@ -143,6 +145,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
           stock: book.stock,
           category: book.category,
           publisher: book.publisher,
+          author: book.author || "",
           stockStatus: book.stockStatus || 'in_stock',
           image: book.image,
           readingPlan: bookReadingPlan
@@ -155,6 +158,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
           stock: 0,
           category: "",
           publisher: "",
+          author: "",
           stockStatus: "in_stock",
           readingPlan: [],
         });
@@ -186,13 +190,14 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
         price: data.price,
         stock: data.stock,
         type: "book",
-        category: data.category,
-        publisher: data.publisher,
-        stockStatus: data.stockStatus,
-        image: data.image,
-        readingPlan: data.readingPlan?.map((rp) => ({
-          id: rp.id || "",
-          productId: rp.productId || "",
+      category: data.category,
+      publisher: data.publisher,
+      author: data.author,
+      stockStatus: data.stockStatus,
+      image: data.image,
+      readingPlan: data.readingPlan?.map((rp) => ({
+        id: rp.id || "",
+        productId: rp.productId || "",
           schoolId: rp.schoolId,
           grade: rp.grade,
           status: rp.status,
@@ -220,14 +225,15 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent className="sm:max-w-[600px] w-full">
-        <SheetHeader>
-          <SheetTitle>{book ? t('books_page.edit_book') : t('books_page.add_new_book')}</SheetTitle>
-          <SheetDescription>
-            {book ? t('books_page.edit_book_description') : t('books_page.add_new_book_description')}
-          </SheetDescription>
-        </SheetHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full flex-col">
+            <SheetHeader>
+              <SheetTitle>{book ? t('books_page.edit_book') : t('books_page.add_new_book')}</SheetTitle>
+              <SheetDescription>
+                {book ? t('books_page.edit_book_description') : t('books_page.add_new_book_description')}
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 space-y-4 py-4 overflow-y-auto">
             <FormField
               control={form.control}
               name="name"
@@ -326,6 +332,19 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="author"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('common.author') || (language === 'pt' ? 'Autor' : 'Author')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={language === 'pt' ? 'Nome do Autor' : 'Author Name'} {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -474,6 +493,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
               </Button>
             </div>
             {asyncError && <p className="text-red-500 text-sm">{asyncError}</p>}
+            </div>
             <SheetFooter>
               <SheetClose asChild>
                 <Button type="button" variant="outline">

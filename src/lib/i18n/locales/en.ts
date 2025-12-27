@@ -107,6 +107,7 @@ export const en = {
     stock: 'Stock',
     category: 'Category',
     publisher: 'Publisher',
+    author: 'Author',
     image: 'Image',
     status: 'Status',
     reading_plan: 'Reading Plan',

@@ -45,6 +45,7 @@ export async function PUT(
       dataAiHint: updatedProduct.dataAiHint,
       category: updatedProduct.category,
       publisher: updatedProduct.publisher,
+      author: updatedProduct.author,
       stockStatus: updatedProduct.stockStatus,
       status: updatedProduct.status,
       image: updatedProduct.image,

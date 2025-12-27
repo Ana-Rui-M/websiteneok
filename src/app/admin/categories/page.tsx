@@ -5,9 +5,15 @@ import type { Category } from "@/lib/types";
 import CategoriesPageClient from "./client";
 
 async function getCategoriesData() {
-    const categoriesCollection = firestore.collection('categories');
-    const categoriesSnapshot = await categoriesCollection.get();
-    const categories = categoriesSnapshot.docs.map(doc => doc.data() as Category);
+    const snapshot = await firestore.collection('categories').get();
+    const categories: Category[] = snapshot.docs.map(doc => {
+      const data: any = doc.data();
+      const name = typeof data.name === 'object'
+        ? data.name
+        : { pt: data.ptName || data.name || '', en: data.name || data.ptName || '' };
+      const type = data.type === 'game' ? 'game' : 'book';
+      return { id: doc.id, name, type };
+    });
     return { categories };
 }
 

@@ -6,13 +6,20 @@ import { z } from 'zod';
 export const ProductSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, 'Name is required').optional(),
-  description: z.string().min(1, 'Description is required'),
+  description: z.union([
+    z.string(),
+    z.object({
+      pt: z.string(),
+      en: z.string(),
+    }),
+  ]).optional(),
   price: z.number().nonnegative('Price must be non-negative'),
   stock: z.number().optional(),
   type: z.enum(["book", "game"]),
   dataAiHint: z.string().optional(),
   category: z.string().optional(),
   publisher: z.string().optional(),
+  author: z.string().optional(),
   stockStatus: z.enum(['in_stock', 'out_of_stock', 'sold_out']).optional(),
   status: z.enum(["mandatory", "recommended"]).optional(),
 });
@@ -67,6 +74,7 @@ export interface Product {
   dataAiHint?: string;
   category?: string;
   publisher?: string;
+  author?: string;
   stockStatus?: 'in_stock' | 'out_of_stock' | 'sold_out';
   status?: "mandatory" | "recommended";
   readingPlan?: ReadingPlanItem[];

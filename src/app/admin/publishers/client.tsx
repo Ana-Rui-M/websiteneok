@@ -39,9 +39,10 @@ interface PublishersPageClientProps {
 }
 
 export default function PublishersPageClient({ initialPublishers }: PublishersPageClientProps) {
-  const { publishers, addPublisher, deletePublisher, setPublishers } = useData();
+  const { publishers, addPublisher, deletePublisher, setPublishers, updatePublisher } = useData();
   const { t } = useLanguage();
   const [newPublisher, setNewPublisher] = useState('');
+  const [editing, setEditing] = useState<{ prev: string; next: string } | null>(null);
 
   useEffect(() => {
     setPublishers(initialPublishers);
@@ -57,6 +58,14 @@ export default function PublishersPageClient({ initialPublishers }: PublishersPa
 
   const handleDeletePublisher = (publisherToDelete: string) => {
     deletePublisher(publisherToDelete);
+  };
+  const handleStartEdit = (publisher: string) => {
+    setEditing({ prev: publisher, next: publisher });
+  };
+  const handleConfirmEdit = async () => {
+    if (!editing) return;
+    await updatePublisher(editing.prev, editing.next);
+    setEditing(null);
   };
 
 
@@ -112,15 +121,15 @@ export default function PublishersPageClient({ initialPublishers }: PublishersPa
                   <TableCell className="text-right">
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button
-                                aria-haspopup="true"
-                                size="icon"
-                                variant="ghost"
-                                className="text-destructive hover:text-destructive"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">{t('publishers_page.delete_publisher')}</span>
-                            </Button>
+                          <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive"
+                          >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">{t('publishers_page.delete_publisher')}</span>
+                          </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
@@ -135,6 +144,9 @@ export default function PublishersPageClient({ initialPublishers }: PublishersPa
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
+                    <Button variant="outline" size="sm" className="ml-2" onClick={() => handleStartEdit(publisher)}>
+                      Editar
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -142,6 +154,21 @@ export default function PublishersPageClient({ initialPublishers }: PublishersPa
           </Table>
         </CardContent>
       </Card>
+      {editing && (
+        <AlertDialog open onOpenChange={(o) => !o && setEditing(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Editar Editora</AlertDialogTitle>
+              <AlertDialogDescription>Atualize o nome.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <Input value={editing.next} onChange={(e) => setEditing({ ...editing, next: e.target.value })} />
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmEdit}>{t('common.save_changes')}</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </>
   );
 }
