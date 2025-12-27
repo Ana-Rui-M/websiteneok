@@ -440,7 +440,7 @@ export const DataProvider = ({
         readingPlan, setReadingPlan,
         categories, setCategories, addCategory, deleteCategory,
         publishers, setPublishers, addPublisher, deletePublisher,
-        orders, setOrders, submitOrder, updateOrderPaymentStatus, updateOrderDeliveryStatus, deleteOrder,
+        orders, setOrders, submitOrder, addOrder, updateOrderPaymentStatus, updateOrderDeliveryStatus, deleteOrder,
       }}
     >
       {children}

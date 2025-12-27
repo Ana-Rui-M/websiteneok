@@ -156,14 +156,14 @@ export default function CheckoutForm() {
       await submitOrder({
         ...data,
         paymentMethod: data.paymentMethod, // Use the selected payment method
-        deliveryAddress: data.deliveryOption === "delivery" ? data.deliveryAddress : null,
+        deliveryAddress: data.deliveryOption === "delivery" ? (data.deliveryAddress ?? "") : null,
         items: cartItems,
         total: finalTotal,
         deliveryFee,
         reference: orderReference,
         date: new Date().toISOString(),
         schoolId: schoolInCart?.id,
-        schoolName: schoolName,
+        schoolName: schoolName ?? undefined,
         studentName: isSchoolOrder ? data.studentName : undefined,
         studentClass: (isSchoolOrder && data.deliveryOption === "levantamento") ? (data.classAndGrade ?? undefined) : undefined,
       });
@@ -171,6 +171,7 @@ export default function CheckoutForm() {
       clearCart();
       const urlParams = new URLSearchParams();
       urlParams.set("ref", orderReference);
+      urlParams.set("payment", data.paymentMethod);
       router.push(`/order-confirmation?${urlParams.toString()}`);
 
 

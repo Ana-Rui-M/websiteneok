@@ -4,6 +4,7 @@ import { ShopPageContent } from '@/components/shop-page-content';
 import Header from '@/components/header';
 import { DataProvider } from '@/context/data-context';
 import { firestore } from '@/lib/firebase-admin';
+import type { School, Product, ReadingPlanItem, Category } from '@/lib/types';
 
 // Avoid prerendering Loja at build time; fetch data on request.
 export const revalidate = 60;
@@ -22,9 +23,9 @@ async function getShopData() {
   ]);
 
   const schoolsData = schoolsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-  const productsData = productsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-  const readingPlanData = readingPlanSnapshot.docs.map((doc) => doc.data());
-  const categoriesData = categoriesSnapshot.docs.map((doc) => {
+  const productsData = productsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Product[];
+  const readingPlanData = readingPlanSnapshot.docs.map((doc) => doc.data()) as ReadingPlanItem[];
+  const categoriesData: Category[] = categoriesSnapshot.docs.map((doc) => {
     const data = doc.data() as any;
     const name = typeof data.name === 'object'
       ? data.name
@@ -33,7 +34,7 @@ async function getShopData() {
     return { id: doc.id, name, type };
   });
 
-  return { schoolsData, productsData, readingPlanData, categoriesData };
+  return { schoolsData: schoolsData as School[], productsData, readingPlanData, categoriesData };
 }
 
 function ShopPageLoading() {

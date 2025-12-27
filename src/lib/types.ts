@@ -85,6 +85,7 @@ export interface Order {
   reference: string;
   date: string;
   studentName?: string;
+  studentClass?: string;
   guardianName: string;
   phone: string;
   email: string;

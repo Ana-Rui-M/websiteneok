@@ -34,7 +34,7 @@ export const sendOrderConfirmationEmail = functions.firestore
         <h2>Order Details:</h2>
         <ul>
           <li><strong>Student Name:</strong> ${order.studentName}</li>
-          <li><strong>Class and Grade:</strong> ${order.classAndGrade}</li>
+          <li><strong>Class and Grade:</strong> ${order.studentClass || ''}</li>
           <li><strong>Phone:</strong> ${order.phone}</li>
           <li><strong>Delivery Option:</strong> ${order.deliveryOption}</li>
           ${order.deliveryAddress ? `<li><strong>Delivery Address:</strong> ${order.deliveryAddress}</li>` : ""}

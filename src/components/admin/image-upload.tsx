@@ -50,12 +50,11 @@ export function ImageUpload({ label = 'Imagem', value, onChange, multiple = fals
       }
     }
     if (files.length > 0) {
-      const fileList = {
-        length: files.length,
-        item: (i: number) => files[i],
-        ...files,
-      } as unknown as FileList;
-      await handleFiles(fileList);
+      const dt = new DataTransfer();
+      for (const f of files) {
+        dt.items.add(f);
+      }
+      await handleFiles(dt.files);
     }
   };
 

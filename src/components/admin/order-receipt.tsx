@@ -16,6 +16,7 @@ import { NeokudilongaLogo } from "@/components/logo";
 import type { Order } from "@/lib/types";
 import { Download, Printer } from "lucide-react";
 import { getDisplayName } from "@/lib/utils";
+import { useLanguage } from "@/context/language-context";
 
 interface OrderReceiptSheetProps {
   isOpen: boolean;
@@ -29,6 +30,14 @@ export function OrderReceiptSheet({
   order,
 }: OrderReceiptSheetProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
+  const { t, language } = useLanguage();
+
+  const paymentMethodLabel = () => {
+    if (order.paymentMethod === 'transferencia') return t('checkout_form.payment_method_3');
+    if (order.paymentMethod === 'multicaixa') return t('checkout_form.payment_method_2');
+    if (order.paymentMethod === 'numerario') return t('checkout_form.payment_method_1');
+    return order.paymentMethod;
+  };
 
   const handlePrint = () => {
     const printWindow = window.open('', '', 'height=600,width=800');
@@ -89,7 +98,7 @@ export function OrderReceiptSheet({
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent className="flex flex-col w-full sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>Recibo da Encomenda</SheetTitle>
+          <SheetTitle>{t('orders_page.view_receipt')}</SheetTitle>
         </SheetHeader>
         <div className="flex-1 overflow-auto">
           <div id="receipt-container" className="py-4 pr-6 overflow-x-auto">
@@ -100,32 +109,32 @@ export function OrderReceiptSheet({
               <table className="w-full text-sm border-collapse">
                 <tbody>
                   <tr className="border-b">
-                    <td className="font-bold p-2 border border-black">Escola</td>
+                    <td className="font-bold p-2 border border-black">{t('receipt.school')}</td>
                     <td className="p-2 border border-black">{order.schoolName || 'N/A'}</td>
                   </tr>
                   <tr className="border-b">
-                    <td className="font-bold p-2 border border-black">Nome do(a) Aluno(a)</td>
+                    <td className="font-bold p-2 border border-black">{t('receipt.student_name')}</td>
                     <td className="p-2 border border-black">{order.studentName}</td>
                   </tr>
                   <tr className="border-b">
-                    <td className="font-bold p-2 border border-black">Nome do(a) Encarregado(a)</td>
+                    <td className="font-bold p-2 border border-black">{t('receipt.guardian_name')}</td>
                     <td className="p-2 border border-black">{order.guardianName}</td>
                   </tr>
                   <tr className="border-b">
-                    <td className="font-bold p-2 border border-black">Número de Refêrencia</td>
+                    <td className="font-bold p-2 border border-black">{t('receipt.reference')}</td>
                     <td className="p-2 border border-black">{order.reference}</td>
                   </tr>
                   <tr className="border-b">
-                    <td className="font-bold p-2 border border-black">Número de Telefone</td>
+                    <td className="font-bold p-2 border border-black">{t('receipt.phone')}</td>
                     <td className="p-2 border border-black">{order.phone}</td>
                   </tr>
                   <tr className="border-b">
-                    <td className="font-bold p-2 border border-black">LOCAL ENTREGA:</td>
+                    <td className="font-bold p-2 border border-black">{t('receipt.delivery_address')}</td>
                     <td className="p-2 border border-black">{order.deliveryAddress || "N/A"}</td>
                   </tr>
                   <tr className="border-b">
-                    <td className="font-bold p-2 border border-black">Forma de Pagamento</td>
-                    <td className="p-2 border border-black uppercase">{order.paymentMethod}</td>
+                    <td className="font-bold p-2 border border-black">{t('receipt.payment_method')}</td>
+                    <td className="p-2 border border-black">{paymentMethodLabel()}</td>
                   </tr>
                 </tbody>
               </table>
@@ -133,23 +142,23 @@ export function OrderReceiptSheet({
               <table className="w-full text-sm border-collapse">
                 <thead>
                     <tr className="border-b">
-                        <th className="font-bold p-2 border border-black text-left">ENCOMENDA:</th>
-                        <th className="font-bold p-2 border border-black text-right">PREÇO:Kz</th>
+                        <th className="font-bold p-2 border border-black text-left">{t('receipt.order')}:</th>
+                        <th className="font-bold p-2 border border-black text-right">{t('receipt.price_kz')}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {order.items.map(item => (
                         <tr key={item.id} className="border-b">
-                            <td className="p-2 border border-black">{getDisplayName(item.name, "pt")}</td>
+                            <td className="p-2 border border-black">{getDisplayName(item.name, language)}</td>
                             <td className="p-2 border border-black text-right">{item.price.toLocaleString('pt-PT')}Kz</td>
                         </tr>
                     ))}
                     <tr className="border-b">
-                        <td className="p-2 border border-black">Entrega ao Domicílio</td>
+                        <td className="p-2 border border-black">{t('receipt.home_delivery')}</td>
                         <td className="p-2 border border-black text-right">{order.deliveryFee.toLocaleString('pt-PT')}Kz</td>
                     </tr>
                     <tr className="border-b font-bold text-base">
-                        <td className="p-2 border border-black">TOTAL</td>
+                        <td className="p-2 border border-black">{t('receipt.total')}</td>
                         <td className="p-2 border border-black text-right">{order.total.toLocaleString('pt-PT')}Kz</td>
                     </tr>
                 </tbody>
@@ -162,11 +171,11 @@ export function OrderReceiptSheet({
             <div className="flex w-full gap-2">
                  <Button onClick={handlePrint} className="w-full">
                     <Printer className="mr-2" />
-                    Imprimir
+                    {t('receipt.print')}
                 </Button>
                 <Button onClick={handleDownloadPdf} className="w-full">
                     <Download className="mr-2" />
-                    Download PDF
+                    {t('receipt.download_pdf')}
                 </Button>
             </div>
         </SheetFooter>

@@ -142,7 +142,7 @@ export async function POST(request: Request) {
     console.error("Error importing products:", error);
     return NextResponse.json({ 
       error: `Failed to import products: ${error instanceof Error ? error.message : String(error)}`,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
     }, { status: 500 });
   }
 }

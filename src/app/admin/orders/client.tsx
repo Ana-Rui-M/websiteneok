@@ -39,6 +39,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useData } from "@/context/data-context";
 import { useLanguage } from "@/context/language-context";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,6 +74,7 @@ export default function OrdersPageClient({ initialOrders, initialSchools }: Orde
   
   const [searchQuery, setSearchQuery] = useState("");
   const [schoolFilter, setSchoolFilter] = useState("all");
+  const [selectedRefs, setSelectedRefs] = useState<Set<string>>(new Set());
 
   const handleDeleteOrder = async () => {
     if (orderToDelete) {
@@ -135,6 +138,167 @@ export default function OrdersPageClient({ initialOrders, initialSchools }: Orde
     return school ? getDisplayName(school.name, language) : schoolId;
   }
 
+  const toggleSelectOrder = (reference: string) => {
+    setSelectedRefs(prev => {
+      const next = new Set(prev);
+      if (next.has(reference)) next.delete(reference);
+      else next.add(reference);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedRefs(prev => {
+      if (prev.size === filteredOrders.length) return new Set();
+      const next = new Set<string>();
+      filteredOrders.forEach(o => next.add(o.reference));
+      return next;
+    });
+  };
+
+  const renderReceiptElement = (order: Order) => {
+    const container = document.createElement('div');
+    container.style.width = '210mm';
+    container.style.padding = '16px';
+    container.style.background = 'white';
+    container.style.color = 'black';
+    container.style.border = '1px solid #000';
+    container.style.fontSize = '12px';
+    container.style.lineHeight = '1.5';
+    container.style.minWidth = '210mm';
+
+    const tableRow = (label: string, value: string) => {
+      const row = document.createElement('div');
+      row.style.display = 'grid';
+      row.style.gridTemplateColumns = '1fr 1fr';
+      row.style.border = '1px solid #000';
+      const cell1 = document.createElement('div');
+      cell1.style.fontWeight = 'bold';
+      cell1.style.padding = '8px';
+      cell1.style.borderRight = '1px solid #000';
+      cell1.textContent = label;
+      const cell2 = document.createElement('div');
+      cell2.style.padding = '8px';
+      cell2.textContent = value;
+      row.appendChild(cell1);
+      row.appendChild(cell2);
+      return row;
+    };
+
+    const paymentMethodLabel = () => {
+      if (order.paymentMethod === 'transferencia') return t('checkout_form.payment_method_3');
+      if (order.paymentMethod === 'multicaixa') return t('checkout_form.payment_method_2');
+      if (order.paymentMethod === 'numerario') return t('checkout_form.payment_method_1');
+      return order.paymentMethod;
+    };
+
+    const header = document.createElement('div');
+    header.style.textAlign = 'center';
+    header.style.marginBottom = '8px';
+    header.textContent = 'NEOKUDILONGA';
+    container.appendChild(header);
+
+    container.appendChild(tableRow(t('receipt.school'), order.schoolName || 'N/A'));
+    container.appendChild(tableRow(t('receipt.student_name'), order.studentName || ''));
+    container.appendChild(tableRow(t('receipt.guardian_name'), order.guardianName));
+    container.appendChild(tableRow(t('receipt.reference'), order.reference));
+    container.appendChild(tableRow(t('receipt.phone'), order.phone));
+    container.appendChild(tableRow(t('receipt.delivery_address'), order.deliveryAddress || 'N/A'));
+    container.appendChild(tableRow(t('receipt.payment_method'), paymentMethodLabel()));
+
+    const orderTable = document.createElement('table');
+    orderTable.style.width = '100%';
+    orderTable.style.borderCollapse = 'collapse';
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    const th1 = document.createElement('th');
+    th1.textContent = t('receipt.order') + ':';
+    th1.style.textAlign = 'left';
+    th1.style.border = '1px solid #000';
+    th1.style.padding = '8px';
+    const th2 = document.createElement('th');
+    th2.textContent = t('receipt.price_kz');
+    th2.style.textAlign = 'right';
+    th2.style.border = '1px solid #000';
+    th2.style.padding = '8px';
+    headRow.appendChild(th1);
+    headRow.appendChild(th2);
+    thead.appendChild(headRow);
+    orderTable.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    order.items.forEach(item => {
+      const tr = document.createElement('tr');
+      const td1 = document.createElement('td');
+      td1.textContent = getDisplayName(item.name, language);
+      td1.style.border = '1px solid #000';
+      td1.style.padding = '8px';
+      const td2 = document.createElement('td');
+      td2.textContent = `${item.price.toLocaleString('pt-PT')}Kz`;
+      td2.style.border = '1px solid #000';
+      td2.style.padding = '8px';
+      td2.style.textAlign = 'right';
+      tr.appendChild(td1);
+      tr.appendChild(td2);
+      tbody.appendChild(tr);
+    });
+    const deliveryRow = document.createElement('tr');
+    const dtd1 = document.createElement('td');
+    dtd1.textContent = t('receipt.home_delivery');
+    dtd1.style.border = '1px solid #000';
+    dtd1.style.padding = '8px';
+    const dtd2 = document.createElement('td');
+    dtd2.textContent = `${order.deliveryFee.toLocaleString('pt-PT')}Kz`;
+    dtd2.style.border = '1px solid #000';
+    dtd2.style.padding = '8px';
+    dtd2.style.textAlign = 'right';
+    deliveryRow.appendChild(dtd1);
+    deliveryRow.appendChild(dtd2);
+    tbody.appendChild(deliveryRow);
+    const totalRow = document.createElement('tr');
+    const ttd1 = document.createElement('td');
+    ttd1.textContent = t('receipt.total');
+    ttd1.style.border = '1px solid #000';
+    ttd1.style.padding = '8px';
+    ttd1.style.fontWeight = 'bold';
+    const ttd2 = document.createElement('td');
+    ttd2.textContent = `${order.total.toLocaleString('pt-PT')}Kz`;
+    ttd2.style.border = '1px solid #000';
+    ttd2.style.padding = '8px';
+    ttd2.style.textAlign = 'right';
+    ttd2.style.fontWeight = 'bold';
+    totalRow.appendChild(ttd1);
+    totalRow.appendChild(ttd2);
+    tbody.appendChild(totalRow);
+    orderTable.appendChild(tbody);
+    container.appendChild(orderTable);
+
+    return container;
+  };
+
+  const downloadSelectedReceipts = async () => {
+    if (selectedRefs.size === 0) return;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    let first = true;
+    for (const ref of Array.from(selectedRefs)) {
+      const order = orders.find(o => o.reference === ref);
+      if (!order) continue;
+      const el = renderReceiptElement(order);
+      document.body.appendChild(el);
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true });
+      document.body.removeChild(el);
+      const imgData = canvas.toDataURL('image/png');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const ratio = Math.min(pdfWidth / canvas.width, pdfHeight / canvas.height);
+      const imgX = (pdfWidth - canvas.width * ratio) / 2;
+      if (!first) pdf.addPage();
+      first = false;
+      pdf.addImage(imgData, 'PNG', imgX, 10, canvas.width * ratio, canvas.height * ratio);
+    }
+    pdf.save('receipts.pdf');
+  };
+
   return (
     <>
       <Card>
@@ -193,11 +357,24 @@ export default function OrdersPageClient({ initialOrders, initialSchools }: Orde
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
+            <div className="flex w-full sm:w-auto">
+              <Button onClick={downloadSelectedReceipts} disabled={selectedRefs.size === 0}>
+                {t('receipt.download_pdf')}
+              </Button>
+            </div>
           </div>
           <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>
+                  <input
+                    type="checkbox"
+                    aria-label="select all"
+                    checked={selectedRefs.size === filteredOrders.length && filteredOrders.length > 0}
+                    onChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>{t('orders_page.order_ref')}</TableHead>
                 <TableHead>{t('orders_page.student_school')}</TableHead>
                 <TableHead>{t('common.date')}</TableHead>
@@ -212,6 +389,14 @@ export default function OrdersPageClient({ initialOrders, initialSchools }: Orde
             <TableBody>
               {filteredOrders.map((order) => (
                 <TableRow key={order.reference}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      aria-label={`select ${order.reference}`}
+                      checked={selectedRefs.has(order.reference)}
+                      onChange={() => toggleSelectOrder(order.reference)}
+                    />
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{order.reference}</TableCell>
                   <TableCell>
                     <div className="font-medium">{order.studentName || "N/A"}</div>

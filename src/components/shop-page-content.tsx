@@ -149,9 +149,17 @@ export const ShopPageContent = ({
         const productName = typeof p.name === 'string'
             ? p.name
             : (typeof p.name === 'object' ? (p.name[language] || p.name.pt || '') : '');
+        const productDescription = typeof p.description === 'string'
+            ? p.description
+            : (typeof p.description === 'object' ? (p.description[language] || p.description.pt || '') : '');
+        const productPublisher = p.publisher || '';
         return p.type === 'book' &&
                p.stockStatus !== 'sold_out' &&
-               productName.toLowerCase().includes(bookSearchQuery.toLowerCase()) &&
+               (
+                 productName.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
+                 productDescription.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
+                 productPublisher.toLowerCase().includes(bookSearchQuery.toLowerCase())
+               ) &&
                (selectedBookCategory === 'all' || p.category === selectedBookCategory)
     })
   }, [products, bookSearchQuery, selectedBookCategory, language]);
