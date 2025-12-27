@@ -34,19 +34,13 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendOrderConfirmationEmail = void 0;
-const functions = __importStar(require("firebase-functions"));
+const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const nodemailer = __importStar(require("nodemailer"));
+const params_1 = require("firebase-functions/params");
 admin.initializeApp();
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-        user: functions.config().gmail.email,
-        pass: functions.config().gmail.password,
-    },
-});
+const gmailEmailParam = (0, params_1.defineString)("GMAIL_EMAIL");
+const gmailPasswordParam = (0, params_1.defineString)("GMAIL_PASSWORD");
 exports.sendOrderConfirmationEmail = functions.firestore
     .document("orders/{orderId}")
     .onCreate(async (snapshot, context) => {
@@ -55,6 +49,19 @@ exports.sendOrderConfirmationEmail = functions.firestore
         console.log("No order data found.");
         return null;
     }
+    const gmailUser = gmailEmailParam.value() || process.env.GMAIL_EMAIL;
+    const gmailPass = gmailPasswordParam.value() || process.env.GMAIL_PASSWORD;
+    const transporter = (gmailUser && gmailPass)
+        ? nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
+            auth: {
+                user: gmailUser,
+                pass: gmailPass,
+            },
+        })
+        : nodemailer.createTransport({ jsonTransport: true });
     const mailOptions = {
         from: "NEOKUDILONGA <noreply@neokudilonga.com>",
         to: order.email, // Assuming the order object has an email field
@@ -65,7 +72,7 @@ exports.sendOrderConfirmationEmail = functions.firestore
         <h2>Order Details:</h2>
         <ul>
           <li><strong>Student Name:</strong> ${order.studentName}</li>
-          <li><strong>Class and Grade:</strong> ${order.classAndGrade}</li>
+          <li><strong>Class and Grade:</strong> ${order.studentClass || ''}</li>
           <li><strong>Phone:</strong> ${order.phone}</li>
           <li><strong>Delivery Option:</strong> ${order.deliveryOption}</li>
           ${order.deliveryAddress ? `<li><strong>Delivery Address:</strong> ${order.deliveryAddress}</li>` : ""}
