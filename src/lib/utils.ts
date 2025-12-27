@@ -25,19 +25,12 @@ export function normalizeImageUrl(image?: string): string {
   // Web URL: sanitize Firebase Storage URLs that may be malformed
   if (image.startsWith('http://') || image.startsWith('https://')) {
     // If it's a Firebase Storage URL, fix common issues:
-    // - Wrong bucket suffix (.firebasestorage.app -> .appspot.com)
     // - Duplicate or noisy query params (ensure only alt=media and token)
     if (/^https?:\/\/firebasestorage\.googleapis\.com\//.test(image)) {
-      // Fix bucket name if incorrectly saved
-      const cleaned = image.replace(
-        /\/v0\/b\/([^\/]+)\.firebasestorage\.app\/o\//,
-        (_m, bucket) => `/v0/b/${bucket}.appspot.com/o/`
-      );
-
       // Reconstruct query params safely
-      const qIndex = cleaned.indexOf('?');
-      const base = qIndex >= 0 ? cleaned.slice(0, qIndex) : cleaned;
-      const rest = qIndex >= 0 ? cleaned.slice(qIndex + 1).split('?')[0] : '';
+      const qIndex = image.indexOf('?');
+      const base = qIndex >= 0 ? image.slice(0, qIndex) : image;
+      const rest = qIndex >= 0 ? image.slice(qIndex + 1).split('?')[0] : '';
 
       const params = new URLSearchParams(rest);
       const token = params.get('token') || '';
