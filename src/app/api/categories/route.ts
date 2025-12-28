@@ -2,26 +2,14 @@
 import { firestore } from '@/lib/firebase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 import type { Category } from '@/lib/types';
+import { revalidateTag } from 'next/cache';
+import { getCachedCategories } from '@/lib/admin-cache';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const categoriesRef = firestore.collection('categories');
-    const snapshot = await categoriesRef.get();
-    const categories: Category[] = [];
-    snapshot.forEach(doc => {
-      const data = doc.data() as any;
-      const name = typeof data.name === 'object'
-        ? data.name
-        : { pt: data.ptName || data.name || '', en: data.name || data.ptName || '' };
-      const type = data.type === 'game' ? 'game' : 'book';
-      categories.push({
-        id: doc.id,
-        name,
-        type,
-      });
-    });
+    const categories = await getCachedCategories();
     return NextResponse.json(categories, { status: 200 });
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -46,6 +34,9 @@ export async function POST(request: NextRequest) {
       name: category.name,
       type,
     });
+
+    revalidateTag('categories');
+    revalidateTag('shop');
 
     return NextResponse.json({ id: docId, name: category.name, type }, { status: 201 });
   } catch (error) {

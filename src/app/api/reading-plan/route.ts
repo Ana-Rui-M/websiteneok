@@ -2,28 +2,13 @@
 import { NextResponse } from 'next/server';
 import { firestore } from '@/lib/firebase-admin';
 import type { ReadingPlanItem } from '@/lib/types';
+import { getCachedReadingPlan } from '@/lib/admin-cache';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // Prefer the canonical 'readingPlan' collection, but fall back to legacy 'readingPlans'
-    const primary = firestore.collection('readingPlan');
-    let snapshot = await primary.get();
-
-    if (snapshot.empty) {
-      const legacy = firestore.collection('readingPlans');
-      const legacySnap = await legacy.get();
-      if (!legacySnap.empty) {
-        snapshot = legacySnap;
-      }
-    }
-
-    const items: ReadingPlanItem[] = [];
-    snapshot.forEach(doc => {
-      items.push(doc.data() as ReadingPlanItem);
-    });
-
+    const items = await getCachedReadingPlan();
     return NextResponse.json(items, { status: 200 });
   } catch (error) {
     console.error('Error fetching reading plan:', error);

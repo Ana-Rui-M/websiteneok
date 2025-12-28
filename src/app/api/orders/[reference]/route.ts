@@ -1,6 +1,7 @@
 
 import { firestore } from '@/lib/firebase-admin';
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { Order } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -32,6 +33,8 @@ export async function PUT(
     }
 
     await orderRef.update(updateData);
+    
+    revalidateTag('orders');
 
     return NextResponse.json({ message: 'Order updated successfully' }, { status: 200 });
   } catch (error) {
@@ -52,6 +55,8 @@ export async function DELETE(
     }
 
     await firestore.collection('orders').doc(reference).delete();
+
+    revalidateTag('orders');
 
     return NextResponse.json({ message: 'Order deleted successfully' }, { status: 200 });
   } catch (error) {

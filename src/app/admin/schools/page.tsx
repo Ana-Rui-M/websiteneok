@@ -1,13 +1,10 @@
 
-import { firestore } from "@/lib/firebase-admin";
 import { requireAdmin } from "@/lib/require-admin";
-import type { School } from "@/lib/types";
 import SchoolsPageClient from "./client";
+import { getCachedSchools } from "@/lib/admin-cache";
 
 async function getSchoolsData() {
-    const schoolsCollection = firestore.collection('schools');
-    const schoolsSnapshot = await schoolsCollection.get();
-    const schools = schoolsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as School));
+    const schools = await getCachedSchools();
     return { schools };
 }
 

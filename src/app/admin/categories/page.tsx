@@ -1,18 +1,17 @@
 
-import { firestore } from "@/lib/firebase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 import type { Category } from "@/lib/types";
 import CategoriesPageClient from "./client";
+import { getCachedCategories } from "@/lib/admin-cache";
 
 async function getCategoriesData() {
-    const snapshot = await firestore.collection('categories').get();
-    const categories: Category[] = snapshot.docs.map(doc => {
-      const data: any = doc.data();
+    const rawCategories = await getCachedCategories();
+    const categories: Category[] = rawCategories.map(data => {
       const name = typeof data.name === 'object'
         ? data.name
-        : { pt: data.ptName || data.name || '', en: data.name || data.ptName || '' };
+        : { pt: (data as any).ptName || data.name || '', en: data.name || (data as any).ptName || '' };
       const type = data.type === 'game' ? 'game' : 'book';
-      return { id: doc.id, name, type };
+      return { id: data.id, name, type } as Category;
     });
     return { categories };
 }

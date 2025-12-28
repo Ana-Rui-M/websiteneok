@@ -2,15 +2,12 @@ import { firestore } from '@/lib/firebase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { Product, ReadingPlanItem } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
+import { revalidateTag } from 'next/cache';
+import { getCachedProducts } from '@/lib/admin-cache';
 
 export async function GET() {
   try {
-    const productsRef = firestore.collection('products');
-    const snapshot = await productsRef.get();
-    const products: Product[] = [];
-    snapshot.forEach(doc => {
-      products.push({ id: doc.id, ...doc.data() } as Product);
-    });
+    const products = await getCachedProducts();
     return NextResponse.json(products, { status: 200 });
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -74,6 +71,10 @@ export async function POST(request: NextRequest) {
     // Save product to Firestore
     const docRef = firestore.collection('products').doc(productId);
     await docRef.set(productData);
+
+    revalidateTag('products');
+    revalidateTag('reading-plan');
+    revalidateTag('shop');
 
     return NextResponse.json({ message: 'Product created', productId: productId }, { status: 201 });
   } catch (error) {

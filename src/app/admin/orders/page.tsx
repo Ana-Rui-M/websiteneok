@@ -1,17 +1,13 @@
 
-import { firestore } from "@/lib/firebase-admin";
 import { requireAdmin } from "@/lib/require-admin";
-import type { Order, School } from "@/lib/types";
 import OrdersPageClient from "./client";
+import { getCachedOrders, getCachedSchools } from "@/lib/admin-cache";
 
 async function getOrdersData() {
-    const ordersCollection = firestore.collection('orders');
-    const ordersSnapshot = await ordersCollection.orderBy('date', 'desc').get();
-    const orders = ordersSnapshot.docs.map(doc => doc.data() as Order);
-
-    const schoolsCollection = firestore.collection('schools');
-    const schoolsSnapshot = await schoolsCollection.get();
-    const schools = schoolsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as School));
+    const [orders, schools] = await Promise.all([
+        getCachedOrders(),
+        getCachedSchools()
+    ]);
 
     return { orders, schools };
 }

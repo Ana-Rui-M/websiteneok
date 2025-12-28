@@ -4,6 +4,8 @@ import { School } from "@/lib/types";
 import { NextResponse } from "next/server";
 import fs from 'fs';
 import path from 'path';
+import { revalidateTag } from "next/cache";
+import { getCachedSchools } from "@/lib/admin-cache";
 
 export const dynamic = 'force-dynamic';
 
@@ -18,23 +20,7 @@ const logError = (error: unknown, context: string) => {
 
 export async function GET() {
     try {
-    const schoolsCollection = firestore.collection("schools");
-        const schoolsSnapshot = await schoolsCollection.get();
-        const schools: School[] = [];
-
-        schoolsSnapshot.forEach(doc => {
-            const data = doc.data();
-            schools.push({
-                id: doc.id,
-                name: typeof data.name === 'object' ? data.name : data.name,
-                description: typeof data.description === 'object' ? data.description : data.description,
-                abbreviation: data.abbreviation || '',
-                allowPickup: !!data.allowPickup,
-                allowPickupAtLocation: !!data.allowPickupAtLocation,
-                hasRecommendedPlan: !!data.hasRecommendedPlan,
-            });
-        });
-
+        const schools = await getCachedSchools();
         return NextResponse.json(schools);
     } catch (error) {
         logError(error, "Error fetching schools in GET function");
@@ -60,6 +46,9 @@ export async function POST(request: Request) {
 
     const schoolRef = firestore.collection('schools').doc(id);
     await schoolRef.set(schoolDataWithDescription);
+
+    revalidateTag('schools');
+    revalidateTag('shop');
 
     return NextResponse.json({ id, ...schoolDataWithDescription }, { status: 201 });
   } catch (error) {

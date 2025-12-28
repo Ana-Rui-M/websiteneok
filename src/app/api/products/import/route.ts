@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { firestore } from "@/lib/firebase-admin";
 import { ProductSchema } from "@/lib/types";
 import * as XLSX from 'xlsx';
+import { revalidateTag } from 'next/cache';
+
+import { getCachedCategories } from "@/lib/admin-cache";
 
 export async function POST(request: Request) {
   try {
@@ -25,11 +28,8 @@ export async function POST(request: Request) {
 
     const importResults: { status: string; message: string; data: any }[] = [];
 
-    const categoriesSnapshot = await firestore.collection("categories").get();
-    const defaultBookCategory = categoriesSnapshot.docs.find(d => {
-      const data = d.data() as any;
-      return (data.type === 'book');
-    })?.id || "";
+    const categories = await getCachedCategories();
+    const defaultBookCategory = categories.find(cat => cat.type === 'book')?.id || "";
 
     for (const row of jsonData) {
       try {
@@ -141,6 +141,10 @@ export async function POST(request: Request) {
     }
 
     await batch.commit();
+
+    revalidateTag('products');
+    revalidateTag('shop');
+
     return NextResponse.json({ message: "Products imported successfully", results: importResults }, { status: 200 });
   } catch (error) {
     console.error("Error importing products:", error);

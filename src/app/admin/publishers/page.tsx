@@ -1,12 +1,10 @@
 
-import { firestore } from "@/lib/firebase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 import PublishersPageClient from "./client";
+import { getCachedPublishers } from "@/lib/admin-cache";
 
 async function getPublishersData() {
-    const publishersCollection = firestore.collection('publishers');
-    const publishersSnapshot = await publishersCollection.get();
-    const publishers = publishersSnapshot.docs.map(doc => doc.id).sort();
+    const publishers = (await getCachedPublishers()).sort();
     return { publishers };
 }
 

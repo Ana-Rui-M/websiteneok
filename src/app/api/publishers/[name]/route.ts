@@ -1,6 +1,7 @@
 
 import { firestore } from '@/lib/firebase-admin';
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,9 @@ export async function DELETE(
 
     const publisherRef = firestore.collection('publishers').doc(name);
     await publisherRef.delete();
+
+    revalidateTag('publishers');
+    revalidateTag('shop');
 
     return NextResponse.json({ message: 'Publisher deleted successfully' }, { status: 200 });
   } catch (error) {
@@ -43,6 +47,8 @@ export async function PUT(
  
     if (nextName === name) {
       await firestore.collection('publishers').doc(name).set({ name: nextName }, { merge: true });
+      revalidateTag('publishers');
+      revalidateTag('shop');
       return NextResponse.json({ name }, { status: 200 });
     }
  
@@ -60,7 +66,10 @@ export async function PUT(
  
     await targetRef.set({ name: nextName });
     await currentRef.delete();
- 
+
+    revalidateTag('publishers');
+    revalidateTag('shop');
+
     return NextResponse.json({ name: nextName }, { status: 200 });
   } catch (error) {
     console.error('Error updating publisher:', error);

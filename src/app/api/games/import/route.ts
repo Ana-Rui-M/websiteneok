@@ -3,6 +3,9 @@ import { firestore } from "@/lib/firebase-admin";
 import { ProductSchema } from "@/lib/types";
 import { Query } from "firebase-admin/firestore";
 import * as XLSX from "xlsx";
+import { revalidateTag } from "next/cache";
+
+import { getCachedCategories } from "@/lib/admin-cache";
 
 export async function POST(request: Request) {
   try {
@@ -24,8 +27,8 @@ export async function POST(request: Request) {
 
     const importResults: { status: string; message: string; data: any }[] = [];
 
-    const categoriesSnapshot = await firestore.collection("categories").where("type", "==", "game").get();
-    const defaultGameCategory = categoriesSnapshot.docs[0]?.id || "";
+    const categories = await getCachedCategories();
+    const defaultGameCategory = categories.find(cat => cat.type === 'game')?.id || "";
 
     for (const row of jsonData) {
       try {
@@ -106,17 +109,19 @@ export async function POST(request: Request) {
           continue;
         }
 
-        if (row.id) {
-          const productRef = productsCollection.doc(row.id);
-          batch.update(productRef, productData);
-          importResults.push({ status: "updated", message: "Game updated successfully", data: productData });
-        } else {
-          const productRef = productsCollection.doc();
-          productData.id = productRef.id;
-          batch.set(productRef, productData);
-          importResults.push({ status: "added", message: "Game added successfully", data: productData });
-        }
+        // Use a persistent ID or generate a new one
+        const productId = row.id || productsCollection.doc().id;
+        productData.id = productId;
+
+        const docRef = productsCollection.doc(productId);
+        batch.set(docRef, productData, { merge: true });
+        importResults.push({
+          status: row.id ? "updated" : "added",
+          message: row.id ? "Game updated successfully" : "Game added successfully",
+          data: productData
+        });
       } catch (rowError) {
+        console.error("Error processing row:", row, rowError);
         importResults.push({
           status: "failed",
           message: `Error processing row: ${rowError instanceof Error ? rowError.message : String(rowError)}`,
@@ -126,6 +131,10 @@ export async function POST(request: Request) {
     }
 
     await batch.commit();
+
+    revalidateTag('products');
+    revalidateTag('shop');
+
     return NextResponse.json({ message: "Games imported successfully", results: importResults }, { status: 200 });
   } catch (error) {
     return NextResponse.json(

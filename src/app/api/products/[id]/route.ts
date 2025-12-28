@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Product, ReadingPlanItem } from '@/lib/types';
 import { deleteImageFromFirebase } from '@/lib/firebase';
 import { v4 as uuidv4 } from 'uuid'
+import { revalidateTag } from 'next/cache';
 
 export async function PUT(
   request: NextRequest,
@@ -89,6 +90,10 @@ export async function PUT(
       await productRef.update(updateData);
     }
 
+    revalidateTag('products');
+    revalidateTag('reading-plan');
+    revalidateTag('shop');
+
     return NextResponse.json({ message: 'Product updated successfully' }, { status: 200 });
   } catch (error) {
     console.error(`[PUT /api/products] Error updating product:`, error);
@@ -129,6 +134,10 @@ export async function DELETE(
     }
 
     await productRef.delete();
+
+    revalidateTag('products');
+    revalidateTag('reading-plan');
+    revalidateTag('shop');
 
     return NextResponse.json({ message: 'Product deleted successfully' }, { status: 200 });
   } catch (error) {

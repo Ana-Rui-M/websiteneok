@@ -1,10 +1,11 @@
 
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import type { School, Product, ReadingPlanItem, Order, Category, PaymentStatus, DeliveryStatus } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "./language-context";
+import { cache } from "@/lib/cache";
 
 interface DataContextType {
   // Loading state
@@ -64,6 +65,7 @@ interface DataProviderProps {
   initialReadingPlan?: ReadingPlanItem[];
   initialCategories?: Category[];
   initialOrders?: Order[];
+  initialPublishers?: string[];
 }
 
 export const DataProvider = ({
@@ -73,6 +75,7 @@ export const DataProvider = ({
   initialReadingPlan,
   initialCategories,
   initialOrders,
+  initialPublishers,
 }: DataProviderProps) => {
   const [loading, setLoading] = useState(false);
   const [schools, setSchools] = useState<School[]>(initialSchools ?? []);
@@ -80,9 +83,62 @@ export const DataProvider = ({
   const [readingPlan, setReadingPlan] = useState<ReadingPlanItem[]>(initialReadingPlan ?? []);
   const [categories, setCategories] = useState<Category[]>(initialCategories ?? []);
   const { language } = useLanguage();
-  const [publishers, setPublishers] = useState<string[]>([]);
+  const [publishers, setPublishers] = useState<string[]>(initialPublishers ?? []);
   const [orders, setOrders] = useState<Order[]>(initialOrders ?? []);
   const { toast } = useToast();
+
+  // Inicializar dados do cache se não houver dados iniciais (SSR)
+  useEffect(() => {
+    if (!initialSchools?.length) {
+      const cachedSchools = cache.get<School[]>('schools');
+      if (cachedSchools) setSchools(cachedSchools);
+    }
+    if (!initialProducts?.length) {
+      const cachedProducts = cache.get<Product[]>('products');
+      if (cachedProducts) setProducts(cachedProducts);
+    }
+    if (!initialCategories?.length) {
+      const cachedCategories = cache.get<Category[]>('categories');
+      if (cachedCategories) setCategories(cachedCategories);
+    }
+    if (!initialReadingPlan?.length) {
+      const cachedRP = cache.get<ReadingPlanItem[]>('reading-plan');
+      if (cachedRP) setReadingPlan(cachedRP);
+    }
+    if (!initialOrders?.length) {
+      const cachedOrders = cache.get<Order[]>('orders');
+      if (cachedOrders) setOrders(cachedOrders);
+    }
+    if (!initialPublishers?.length) {
+      const cachedPublishers = cache.get<string[]>('publishers');
+      if (cachedPublishers) setPublishers(cachedPublishers);
+    }
+  }, []);
+
+  // Sincronizar estado com cache quando os dados mudam
+  useEffect(() => {
+    if (schools.length) cache.set('schools', schools);
+  }, [schools]);
+
+  useEffect(() => {
+    if (products.length) cache.set('products', products);
+  }, [products]);
+
+  useEffect(() => {
+    if (categories.length) cache.set('categories', categories);
+  }, [categories]);
+
+  useEffect(() => {
+    if (readingPlan.length) cache.set('reading-plan', readingPlan);
+  }, [readingPlan]);
+
+  useEffect(() => {
+    if (orders.length) cache.set('orders', orders);
+  }, [orders]);
+
+  useEffect(() => {
+    if (publishers.length) cache.set('publishers', publishers);
+  }, [publishers]);
 
   // Order mutations
   const submitOrder = async (order: Omit<Order, 'paymentStatus' | 'deliveryStatus'>) => {
@@ -94,12 +150,17 @@ export const DataProvider = ({
         body: JSON.stringify(order),
       });
       if (!response.ok) throw new Error('Failed to submit order');
-      const updated = await fetch('/api/orders');
-      const updatedOrders = await updated.json();
-      setOrders(updatedOrders);
+      
+      const newOrder: Order = {
+        ...order,
+        paymentStatus: 'pending',
+        deliveryStatus: 'pending',
+        createdAt: new Date().toISOString()
+      };
+      setOrders(prev => [newOrder, ...prev]);
     } catch (error) {
       console.error(error);
-      throw error; // Re-throw to be caught by the form handler
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -115,10 +176,11 @@ export const DataProvider = ({
         body: JSON.stringify(school),
       });
       if (!response.ok) throw new Error('Failed to add school');
-      // Refetch schools from backend
-      const updated = await fetch('/api/schools');
-      const updatedSchools = await updated.json();
-      setSchools(updatedSchools);
+      
+      const { id } = await response.json();
+      const newSchool = { ...school, id };
+      setSchools(prev => [...prev, newSchool]);
+      
       toast({ title: "School Added", description: `${school.name} was added successfully.` });
     } catch (error) {
       console.error(error);
@@ -136,11 +198,10 @@ export const DataProvider = ({
             body: JSON.stringify(updatedSchool),
         });
         if (!response.ok) throw new Error('Failed to update school');
-  // Refetch schools from backend
-  const updated = await fetch('/api/schools');
-  const updatedSchools = await updated.json();
-  setSchools(updatedSchools);
-  toast({ title: "School Updated", description: `${updatedSchool.name} was updated successfully.` });
+        
+        setSchools(prev => prev.map(s => s.id === updatedSchool.id ? updatedSchool : s));
+        
+        toast({ title: "School Updated", description: `${updatedSchool.name} was updated successfully.` });
     } catch (error) {
         console.error(error);
         toast({ title: "Error", description: "Could not update school.", variant: "destructive" });
@@ -155,10 +216,9 @@ export const DataProvider = ({
             method: 'DELETE',
         });
         if (!response.ok) throw new Error('Failed to delete school');
-  // Refetch schools from backend
-  const updated = await fetch('/api/schools');
-  const updatedSchools = await updated.json();
-  setSchools(updatedSchools);
+        
+        setSchools(prev => prev.filter(s => s.id !== schoolId));
+        
         toast({ title: "School Deleted", description: `School was deleted successfully.` });
     } catch (error) {
         console.error(error);
@@ -188,14 +248,19 @@ export const DataProvider = ({
        const { productId } = await response.json();
        const newProduct = { ...product, id: productId };
 
-       // Refetch products and reading plan from backend to ensure state consistency
-       const [productsRes, rpRes] = await Promise.all([
-         fetch('/api/products', { cache: 'no-store' }),
-         fetch('/api/reading-plan', { cache: 'no-store' })
-       ]);
+       // Atualização otimista do estado local para evitar refetch total
+       setProducts(prev => [...prev, newProduct]);
        
-       if (productsRes.ok) setProducts(await productsRes.json());
-       if (rpRes.ok) setReadingPlan(await rpRes.json());
+       if (readingPlanData.length > 0) {
+         const newRPItems: ReadingPlanItem[] = readingPlanData.map(rp => ({
+           id: `${productId}_${rp.schoolId}_${rp.grade}`,
+           productId,
+           schoolId: rp.schoolId,
+           grade: Number(rp.grade),
+           status: rp.status
+         }));
+         setReadingPlan(prev => [...prev, ...newRPItems]);
+       }
  
        toast({
          title: "Product Added",
@@ -233,18 +298,17 @@ export const DataProvider = ({
          throw new Error(errorData.error || errorData.message || `Failed to update product (${response.status})`);
        }
 
-       // Small delay to allow Firestore to propagate
-       await new Promise(resolve => setTimeout(resolve, 800));
-
-       // Refetch products and reading plan from backend to ensure state consistency
-       console.log('Refetching products and reading plan...');
-       const [productsRes, rpRes] = await Promise.all([
-         fetch('/api/products', { cache: 'no-store' }),
-         fetch('/api/reading-plan', { cache: 'no-store' })
-       ]);
+       // Atualização local do estado
+       setProducts(prev => prev.map(p => p.id === id ? { ...product, id } : p));
        
-       if (productsRes.ok) setProducts(await productsRes.json());
-       if (rpRes.ok) setReadingPlan(await rpRes.json());
+       if (product.readingPlan) {
+         setReadingPlan(prev => {
+           // Remove existing RP items for this product
+           const otherRP = prev.filter(rp => rp.productId !== id);
+           // Add new ones
+           return [...otherRP, ...product.readingPlan!];
+         });
+       }
        
        toast({
          title: "Product Updated",
@@ -276,11 +340,11 @@ export const DataProvider = ({
         body: JSON.stringify({ imageUrl }),
       });
       if (!response.ok) throw new Error('Failed to delete product');
-  // Refetch products and reading plan from backend
-  const updatedProducts = await fetch('/api/products', { cache: 'no-store' });
-  setProducts(await updatedProducts.json());
-  const rpResponse = await fetch('/api/reading-plan', { cache: 'no-store' });
-  setReadingPlan(await rpResponse.json());
+      
+      // Atualização local do estado
+      setProducts(prev => prev.filter(p => p.id !== productId));
+      setReadingPlan(prev => prev.filter(rp => rp.productId !== productId));
+      
       toast({ title: "Product Deleted", description: "Product was deleted successfully." });
     } catch (error) {
       console.error(error);
@@ -300,11 +364,8 @@ export const DataProvider = ({
         body: JSON.stringify(category),
       });
       if (!response.ok) throw new Error('Failed to add category');
-      const optimistic = [...categories, { ...category }];
-      setCategories(optimistic);
-      const updated = await fetch('/api/categories');
-      const updatedCategories = await updated.json();
-      setCategories(updatedCategories);
+      
+      setCategories(prev => [...prev, category]);
       toast({ title: "Category Added", description: `${category.name[language]} was added successfully.` });
     } catch (error) {
       console.error(error);
@@ -316,28 +377,23 @@ export const DataProvider = ({
   const updateCategory = async (prevId: string, next: Category) => {
     setLoading(true);
     try {
-      const optimistic = categories.map(c => {
-        const matchById = c.id && prevId && c.id === prevId;
-        const matchByName = !c.id && (c.name?.pt === prevId || c.name?.en === prevId);
-        if (matchById || matchByName) return { ...next };
-        return c;
-      });
-      setCategories(optimistic);
       const response = await fetch(`/api/categories/${encodeURIComponent(prevId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: next.name, type: next.type }),
       });
       if (!response.ok) throw new Error('Failed to update category');
-      const updated = await fetch('/api/categories');
-      const updatedCategories = await updated.json();
-      setCategories(updatedCategories);
+      
+      setCategories(prev => prev.map(c => {
+        const matchById = c.id && prevId && c.id === prevId;
+        const matchByName = !c.id && (c.name?.pt === prevId || c.name?.en === prevId);
+        if (matchById || matchByName) return { ...next };
+        return c;
+      }));
+      
       toast({ title: "Category Updated", description: `${next.name[language]} was updated successfully.` });
     } catch (error) {
       console.error(error);
-      const updated = await fetch('/api/categories');
-      const updatedCategories = await updated.json();
-      setCategories(updatedCategories);
       toast({ title: "Error", description: "Could not update category.", variant: "destructive" });
     } finally {
       setLoading(false);
@@ -356,9 +412,12 @@ export const DataProvider = ({
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete category');
-      const updated = await fetch('/api/categories');
-      const updatedCategories = await updated.json();
-      setCategories(updatedCategories);
+      
+      setCategories(prev => prev.filter(c => {
+        const cName = typeof c.name === 'string' ? c.name : (c.name?.pt || c.name?.en);
+        return cName !== nameToDelete;
+      }));
+      
       toast({ title: "Category Deleted", description: `${nameToDelete} was deleted successfully.` });
     } catch (error) {
       console.error(error);
@@ -378,11 +437,8 @@ export const DataProvider = ({
         body: JSON.stringify({ name: publisher }),
       });
       if (!response.ok) throw new Error('Failed to add publisher');
-      const optimistic = [...publishers, publisher];
-      setPublishers(optimistic);
-      const updated = await fetch('/api/publishers');
-      const updatedPublishers = await updated.json();
-      setPublishers(updatedPublishers);
+      
+      setPublishers(prev => [...prev, publisher]);
       toast({ title: "Publisher Added", description: `${publisher} was added successfully.` });
     } catch (error) {
       console.error(error);
@@ -394,22 +450,17 @@ export const DataProvider = ({
   const updatePublisher = async (prevName: string, nextName: string) => {
     setLoading(true);
     try {
-      setPublishers(publishers.map(p => (p === prevName ? nextName : p)));
       const response = await fetch(`/api/publishers/${encodeURIComponent(prevName)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: nextName }),
       });
       if (!response.ok) throw new Error('Failed to update publisher');
-      const updated = await fetch('/api/publishers');
-      const updatedPublishers = await updated.json();
-      setPublishers(updatedPublishers);
+      
+      setPublishers(prev => prev.map(p => p === prevName ? nextName : p));
       toast({ title: "Publisher Updated", description: `${nextName} was updated successfully.` });
     } catch (error) {
       console.error(error);
-      const updated = await fetch('/api/publishers');
-      const updatedPublishers = await updated.json();
-      setPublishers(updatedPublishers);
       toast({ title: "Error", description: "Could not update publisher.", variant: "destructive" });
     } finally {
       setLoading(false);
@@ -422,10 +473,8 @@ export const DataProvider = ({
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete publisher');
-  // Refetch publishers from backend
-  const updated = await fetch('/api/publishers');
-  const updatedPublishers = await updated.json();
-  setPublishers(updatedPublishers);
+      
+      setPublishers(prev => prev.filter(p => p !== publisherName));
       toast({ title: "Publisher Deleted", description: `${publisherName} was deleted successfully.` });
     } catch (error) {
       console.error(error);
@@ -445,15 +494,17 @@ export const DataProvider = ({
         body: JSON.stringify(order),
       });
       if (!response.ok) throw new Error('Failed to add order');
-  // Refetch orders from backend
-  const updated = await fetch('/api/orders');
-  const updatedOrders = await updated.json();
-  setOrders(updatedOrders);
-      // No toast here, as it's handled on the checkout page
+      
+      const newOrder: Order = {
+        ...order,
+        paymentStatus: 'pending',
+        deliveryStatus: 'pending'
+      };
+      setOrders(prev => [newOrder, ...prev]);
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "Could not submit order.", variant: "destructive" });
-      throw error; // Re-throw to be caught by the form handler
+      throw error;
     } finally {
         setLoading(false);
     }
@@ -467,10 +518,8 @@ export const DataProvider = ({
         body: JSON.stringify({ paymentStatus: status }),
       });
       if (!response.ok) throw new Error('Failed to update payment status');
-  // Refetch orders from backend
-  const updated = await fetch('/api/orders');
-  const updatedOrders = await updated.json();
-  setOrders(updatedOrders);
+      
+      setOrders(prev => prev.map(o => o.reference === orderReference ? { ...o, paymentStatus: status } : o));
       toast({ title: "Payment Status Updated" });
     } catch (error) {
       console.error(error);
@@ -488,10 +537,8 @@ export const DataProvider = ({
         body: JSON.stringify({ deliveryStatus: status }),
       });
       if (!response.ok) throw new Error('Failed to update delivery status');
-  // Refetch orders from backend
-  const updated = await fetch('/api/orders');
-  const updatedOrders = await updated.json();
-  setOrders(updatedOrders);
+      
+      setOrders(prev => prev.map(o => o.reference === orderReference ? { ...o, deliveryStatus: status } : o));
       toast({ title: "Delivery Status Updated" });
     } catch (error) {
       console.error(error);
@@ -507,10 +554,8 @@ export const DataProvider = ({
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete order');
-      // Refetch orders from backend
-      const updated = await fetch('/api/orders');
-      const updatedOrders = await updated.json();
-      setOrders(updatedOrders);
+      
+      setOrders(prev => prev.filter(o => o.reference !== orderReference));
       toast({ title: "Order Deleted", description: `Order ${orderReference} was deleted successfully.` });
     } catch (error) {
       console.error(error);

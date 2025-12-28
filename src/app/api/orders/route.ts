@@ -2,12 +2,17 @@
 import { firestore } from '@/lib/firebase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { Order } from '@/lib/types';
+import { revalidateTag } from 'next/cache';
+import { getCachedOrders } from '@/lib/admin-cache';
 
 export async function POST(request: NextRequest) {
   try {
     const order: Order = await request.json();
     const orderRef = firestore.collection('orders').doc(order.reference);
     await orderRef.set(order);
+
+    revalidateTag('orders');
+
     return NextResponse.json({ message: 'Order created successfully' }, { status: 201 });
   } catch (error) {
     console.error('Error creating order:', error);
@@ -17,11 +22,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const ordersSnapshot = await firestore.collection('orders').get();
-    const orders: Order[] = [];
-    ordersSnapshot.forEach(doc => {
-      orders.push(doc.data() as Order);
-    });
+    const orders = await getCachedOrders();
     return NextResponse.json(orders, { status: 200 });
   } catch (error) {
     console.error('Error fetching orders:', error);

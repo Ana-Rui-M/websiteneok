@@ -2,6 +2,7 @@
 
 import { firestore } from '@/lib/firebase-admin';
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 
 export async function DELETE(
   request: NextRequest,
@@ -16,6 +17,9 @@ export async function DELETE(
  
     const categoryRef = firestore.collection('categories').doc(name);
     await categoryRef.delete();
+
+    revalidateTag('categories');
+    revalidateTag('shop');
  
     return NextResponse.json({ message: 'Category deleted successfully' }, { status: 200 });
   } catch (error) {
@@ -50,6 +54,8 @@ export async function PUT(
     const newId = String(nextName.pt);
     if (newId === name) {
       await currentRef.set({ name: nextName, type: nextType }, { merge: true });
+      revalidateTag('categories');
+      revalidateTag('shop');
       return NextResponse.json({ id: name, name: nextName, type: nextType }, { status: 200 });
     }
  
@@ -61,6 +67,9 @@ export async function PUT(
  
     await newRef.set({ name: nextName, type: nextType });
     await currentRef.delete();
+
+    revalidateTag('categories');
+    revalidateTag('shop');
  
     return NextResponse.json({ id: newId, name: nextName, type: nextType }, { status: 200 });
   } catch (error) {

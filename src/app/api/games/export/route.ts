@@ -1,18 +1,16 @@
-import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
+import { getCachedProducts } from "@/lib/admin-cache";
 
 export async function GET() {
   try {
-    const productsCol = collection(db, "products");
-    const q = query(productsCol, where("type", "==", "game"));
-    const gameSnapshot = await getDocs(q);
-    const gameList = gameSnapshot.docs.map((doc) => {
-      const data = doc.data();
-      const { image, ...rest } = data;
-      return { id: doc.id, ...rest };
-    });
+    const products = await getCachedProducts();
+    const gameList = products
+      .filter(p => p.type === 'game')
+      .map((product) => {
+        const { image, ...rest } = product;
+        return rest;
+      });
 
     const worksheet = XLSX.utils.json_to_sheet(gameList);
     const workbook = XLSX.utils.book_new();

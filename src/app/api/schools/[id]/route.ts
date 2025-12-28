@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { firestore } from '@/lib/firebase-admin';
 import type { School } from '@/lib/types';
+import { revalidateTag } from 'next/cache';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function PUT(request: Request, context: any) {
@@ -13,6 +14,10 @@ export async function PUT(request: Request, context: any) {
     // Remove id from body to avoid duplicate keys
     const { id: _bodyId, ...updateData } = body;
     await schoolRef.update(updateData);
+    
+    revalidateTag('schools');
+    revalidateTag('shop');
+
     return NextResponse.json({ ...updateData, id }, { status: 200 });
   } catch (error) {
     console.error('Error updating school:', error);
@@ -26,6 +31,9 @@ export async function DELETE(request: Request, context: any) {
         const { id } = context.params;
         const schoolRef = firestore.collection('schools').doc(id);
         await schoolRef.delete();
+        
+        revalidateTag('schools');
+        revalidateTag('shop');
         
         // Optional: Also delete associated reading plan items
         const readingPlanQuery = firestore.collection('readingPlan').where('schoolId', '==', id);

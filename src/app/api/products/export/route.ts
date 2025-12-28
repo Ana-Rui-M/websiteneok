@@ -1,17 +1,13 @@
-import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
+import { getCachedProducts } from "@/lib/admin-cache";
 
 export async function GET() {
   try {
-    const productsCol = collection(db, "products");
-    const productSnapshot = await getDocs(productsCol);
-    const productList = productSnapshot.docs.map((doc) => {
-      const data = doc.data();
-      const id = doc.id; // Get the document ID
-      const { ...rest } = data; // Exclude name and images from data
-      return { id, ...rest }; // Combine id with the rest of the data
+    const products = await getCachedProducts();
+    const productList = products.map((product) => {
+      const { ...rest } = product;
+      return rest;
     });
 
     const worksheet = XLSX.utils.json_to_sheet(productList);
