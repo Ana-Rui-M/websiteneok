@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { normalizeImageUrl } from '@/lib/utils';
-import { storage } from '@/lib/firebase';
+import { storage, auth } from '@/lib/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +29,31 @@ export function ImageUpload({ label = 'Imagem', value, onChange, multiple = fals
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+
+    // Check if user is authenticated with Firebase client-side
+    if (!auth.currentUser) {
+      console.warn("Upload attempted while Firebase auth is not ready. Waiting...");
+      // Optional: you could wait or show a toast
+      toast({
+        title: 'Autenticação em curso',
+        description: 'Aguarde um momento enquanto validamos a sua sessão...',
+      });
+      // Try to wait a bit for Firebase to restore session
+      let attempts = 0;
+      while (!auth.currentUser && attempts < 10) {
+        await new Promise(r => setTimeout(r, 500));
+        attempts++;
+      }
+      if (!auth.currentUser) {
+        toast({
+          title: 'Erro de Autenticação',
+          description: 'Não foi possível verificar a sua sessão. Por favor, faça login novamente.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     setIsUploading(true);
     setProgress(0);
     try {
@@ -249,9 +274,24 @@ async function uploadToFirebase(file: File, folder?: string, onProgress?: (p: nu
       const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
       console.log(`Upload progress: ${pct}%`, snap.state);
       if (onProgress) onProgress(pct);
-    }, (err) => {
-      console.error("Firebase Upload Error:", err);
-      reject(err);
+    }, (err: any) => {
+      console.error("Firebase Upload Error Details:", {
+        code: err.code,
+        message: err.message,
+        name: err.name,
+        serverResponse: err.serverResponse
+      });
+      
+      let friendlyMessage = "Erro ao carregar imagem.";
+      if (err.code === 'storage/unauthorized') {
+        friendlyMessage = "Sem permissão para carregar imagens. Verifique se está ligado.";
+      } else if (err.code === 'storage/canceled') {
+        friendlyMessage = "Upload cancelado.";
+      } else if (err.message?.includes('net::ERR_FAILED')) {
+        friendlyMessage = "Erro de rede ou CORS. Verifique a configuração do bucket.";
+      }
+      
+      reject(new Error(friendlyMessage));
     }, async () => {
       console.log("Upload complete, getting download URL...");
       let attempts = 0;

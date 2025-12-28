@@ -7,7 +7,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyBnTpglZ_7KnlZxDb30aRKMikHBzb6rzF4",
     authDomain: "biblioangola.firebaseapp.com",
     projectId: "biblioangola",
-    storageBucket: "biblioangola.appspot.com",
+    storageBucket: "biblioangola.firebasestorage.app",
     messagingSenderId: "965265307414",
     appId: "1:965265307414:web:c32050e53982f9d8f70237",
     measurementId: "G-31QQ4L2L27",
@@ -19,6 +19,11 @@ const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence);
 const storage = getStorage(app);
 const db = getFirestore(app);
+
+// For debugging purposes in development
+if (typeof window !== 'undefined') {
+    (window as any).firebaseStorage = storage;
+}
 
 // Note: CORS for Firebase Storage must be configured via Google Cloud Console or gsutil.
 // See: https://firebase.google.com/docs/storage/web/download-files#cors_configuration
