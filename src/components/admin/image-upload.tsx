@@ -151,15 +151,24 @@ export function ImageUpload({ label = 'Imagem', value, onChange, multiple = fals
         type="file"
         accept="image/*"
         multiple={multiple}
-        onChange={(e) => handleFiles(e.target.files)}
+        onChange={(e) => {
+          handleFiles(e.target.files);
+          // Reset value to allow selecting the same file again
+          e.target.value = '';
+        }}
         className="hidden"
       />
       <div
-        className="rounded-md border bg-muted/30 p-4 text-sm"
+        className="rounded-md border bg-muted/30 p-4 text-sm cursor-pointer"
         onPaste={onPaste}
         onDrop={onDrop}
         onDragOver={onDragOver}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={(e) => {
+          // Only trigger if clicking the div itself or non-button children
+          if (e.target === e.currentTarget || !(e.target as HTMLElement).closest('button')) {
+            fileInputRef.current?.click();
+          }
+        }}
         role="button"
         aria-label="Área de upload de imagem"
       >
@@ -170,10 +179,25 @@ export function ImageUpload({ label = 'Imagem', value, onChange, multiple = fals
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" disabled={isUploading}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              disabled={isUploading}
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+            >
               {isUploading ? (progress > 0 ? `A carregar... ${progress}%` : 'A carregar...') : 'Selecionar'}
             </Button>
-            <Button type="button" variant="ghost" onClick={readClipboard}>
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={(e) => {
+                e.stopPropagation();
+                readClipboard();
+              }}
+            >
               Colar
             </Button>
           </div>

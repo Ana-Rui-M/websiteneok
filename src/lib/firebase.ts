@@ -20,12 +20,8 @@ setPersistence(auth, browserLocalPersistence);
 const storage = getStorage(app);
 const db = getFirestore(app);
 
-// Set custom metadata for CORS
-const storageCustomMetadata = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
-};
+// Note: CORS for Firebase Storage must be configured via Google Cloud Console or gsutil.
+// See: https://firebase.google.com/docs/storage/web/download-files#cors_configuration
 
 async function deleteImageFromFirebase(imageUrl: string) {
     if (!imageUrl || !imageUrl.includes("firebasestorage.googleapis.com")) {
@@ -48,4 +44,4 @@ async function deleteImageFromFirebase(imageUrl: string) {
     }
 }
 
-export { app, auth, storage, db, storageCustomMetadata, deleteImageFromFirebase };
+export { app, auth, storage, db, deleteImageFromFirebase };

@@ -316,7 +316,7 @@ export function AddEditGameSheet({
                 name="image"
                 render={({ field }) => (
                   <FormItem>
-                    <ImageUpload label="Imagens" value={field.value as any} onChange={field.onChange as any} folder="games" multiple />
+                    <ImageUpload label="Imagens" value={field.value as any} onChange={field.onChange as any} folder="products/games" multiple />
                     <FormMessage />
                   </FormItem>
                 )}

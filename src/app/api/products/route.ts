@@ -47,7 +47,20 @@ export async function POST(request: NextRequest) {
 
     // Clean up product object to remove undefined fields and potential recursive references
     const productData: any = {};
-    const allowedFields = ['name', 'description', 'price', 'stock', 'type', 'category', 'publisher', 'author', 'image', 'status', 'stockStatus', 'dataAiHint'];
+    const allowedFields = [
+      'name', 
+      'description', 
+      'price', 
+      'stock', 
+      'type', 
+      'category', 
+      'publisher', 
+      'author', 
+      'image', 
+      'status', 
+      'stockStatus', 
+      'dataAiHint'
+    ];
     
     allowedFields.forEach(field => {
       if ((product as any)[field] !== undefined) {
@@ -56,6 +69,7 @@ export async function POST(request: NextRequest) {
     });
 
     productData.id = productId;
+    console.log(`[POST /api/products] Final product data:`, JSON.stringify(productData));
 
     // Save product to Firestore
     const docRef = firestore.collection('products').doc(productId);
@@ -63,8 +77,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ message: 'Product created', productId: productId }, { status: 201 });
   } catch (error) {
-    console.error('Error creating product:', error);
-    return NextResponse.json({ message: 'Error creating product' }, { status: 500 });
+    console.error('[POST /api/products] Error creating product:', error);
+    return NextResponse.json({ 
+      message: 'Error creating product', 
+      error: error instanceof Error ? error.message : String(error) 
+    }, { status: 500 });
   }
 }
 

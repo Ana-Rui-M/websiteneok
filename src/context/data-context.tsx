@@ -190,8 +190,8 @@ export const DataProvider = ({
 
        // Refetch products and reading plan from backend to ensure state consistency
        const [productsRes, rpRes] = await Promise.all([
-         fetch('/api/products'),
-         fetch('/api/reading-plan')
+         fetch('/api/products', { cache: 'no-store' }),
+         fetch('/api/reading-plan', { cache: 'no-store' })
        ]);
        
        if (productsRes.ok) setProducts(await productsRes.json());
@@ -230,13 +230,17 @@ export const DataProvider = ({
        if (!response.ok) {
          const errorData = await response.json().catch(() => ({}));
          console.error('Update API Error:', errorData);
-         throw new Error(errorData.message || 'Failed to update product');
+         throw new Error(errorData.error || errorData.message || `Failed to update product (${response.status})`);
        }
 
+       // Small delay to allow Firestore to propagate
+       await new Promise(resolve => setTimeout(resolve, 800));
+
        // Refetch products and reading plan from backend to ensure state consistency
+       console.log('Refetching products and reading plan...');
        const [productsRes, rpRes] = await Promise.all([
-         fetch('/api/products'),
-         fetch('/api/reading-plan')
+         fetch('/api/products', { cache: 'no-store' }),
+         fetch('/api/reading-plan', { cache: 'no-store' })
        ]);
        
        if (productsRes.ok) setProducts(await productsRes.json());
@@ -273,9 +277,9 @@ export const DataProvider = ({
       });
       if (!response.ok) throw new Error('Failed to delete product');
   // Refetch products and reading plan from backend
-  const updatedProducts = await fetch('/api/products');
+  const updatedProducts = await fetch('/api/products', { cache: 'no-store' });
   setProducts(await updatedProducts.json());
-  const rpResponse = await fetch('/api/reading-plan');
+  const rpResponse = await fetch('/api/reading-plan', { cache: 'no-store' });
   setReadingPlan(await rpResponse.json());
       toast({ title: "Product Deleted", description: "Product was deleted successfully." });
     } catch (error) {

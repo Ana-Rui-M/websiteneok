@@ -227,6 +227,8 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
         })) || [],
       };
 
+      console.log("Submitting product data:", JSON.stringify(productData, null, 2));
+      
       if (book) {
         // Update existing book
         await updateProduct(book.id, productData);
@@ -443,7 +445,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
               name="image"
               render={({ field }) => (
                 <FormItem>
-                  <ImageUpload label="Imagem" value={field.value} onChange={field.onChange} folder="books" multiple={false} />
+                  <ImageUpload label="Imagem" value={field.value} onChange={field.onChange} folder="products/books" multiple={false} />
                   <FormMessage />
                 </FormItem>
               )}

@@ -26,39 +26,76 @@ export async function PUT(
     }
 
     // Update reading plans if provided
-    if (updatedProduct?.readingPlan && updatedProduct.readingPlan.length > 0) {
+    if (updatedProduct?.readingPlan) {
+      console.log(`[PUT /api/products/${id}] Processing reading plan updates. Count: ${updatedProduct.readingPlan.length}`);
       const batch = firestore.batch();
+      
+      // 1. Get existing reading plan items for this product
+      const existingRPQuery = await firestore.collection('readingPlan')
+        .where('productId', '==', id)
+        .get();
+      
+      const existingRPIds = existingRPQuery.docs.map(doc => doc.id);
+      const incomingRPIds = updatedProduct.readingPlan
+        .map(plan => plan.id)
+        .filter((id): id is string => !!id);
+
+      // 2. Delete items that are no longer in the incoming list
+      const idsToDelete = existingRPIds.filter(id => !incomingRPIds.includes(id));
+      console.log(`[PUT /api/products/${id}] Deleting ${idsToDelete.length} removed reading plan items`);
+      idsToDelete.forEach(idToDelete => {
+        batch.delete(firestore.collection('readingPlan').doc(idToDelete));
+      });
+
+      // 3. Upsert incoming items
       updatedProduct.readingPlan.forEach((plan: ReadingPlanItem) => {
         const planId = plan.id || uuidv4();
-        // Always use 'readingPlan' as the canonical collection
         const planRef = firestore.collection('readingPlan').doc(planId);
-        batch.set(planRef, { ...plan, id: planId, productId: id }, { merge: true });
+        // Ensure we don't include the ID in the document data if we want Firestore to use the doc ID
+        const { id: _, ...planData } = plan;
+        batch.set(planRef, { ...planData, id: planId, productId: id }, { merge: true });
       });
+      
       await batch.commit();
+      console.log(`[PUT /api/products/${id}] Reading plan batch commit successful`);
     }
 
-    const updateData: any = {
-      name: updatedProduct.name,
-      description: updatedProduct.description,
-      price: updatedProduct.price,
-      stock: updatedProduct.stock,
-      type: updatedProduct.type,
-      stockStatus: updatedProduct.stockStatus,
-      image: updatedProduct.image,
-    };
+    // Build update object, excluding undefined fields
+    const updateData: any = {};
+    const allowedFields = [
+      'name', 
+      'description', 
+      'price', 
+      'stock', 
+      'type', 
+      'stockStatus', 
+      'image', 
+      'dataAiHint', 
+      'category', 
+      'publisher', 
+      'author', 
+      'status'
+    ];
 
-    if (updatedProduct.dataAiHint) updateData.dataAiHint = updatedProduct.dataAiHint;
-    if (updatedProduct.category) updateData.category = updatedProduct.category;
-    if (updatedProduct.publisher) updateData.publisher = updatedProduct.publisher;
-    if (updatedProduct.author) updateData.author = updatedProduct.author;
-    if (updatedProduct.status) updateData.status = updatedProduct.status;
+    allowedFields.forEach(field => {
+      if ((updatedProduct as any)[field] !== undefined) {
+        updateData[field] = (updatedProduct as any)[field];
+      }
+    });
 
-    await productRef.update(updateData);
+    console.log(`[PUT /api/products/${id}] Final update data:`, JSON.stringify(updateData));
+
+    if (Object.keys(updateData).length > 0) {
+      await productRef.update(updateData);
+    }
 
     return NextResponse.json({ message: 'Product updated successfully' }, { status: 200 });
   } catch (error) {
-    console.error('Error updating product:', error);
-    return NextResponse.json({ message: 'Error updating product' }, { status: 500 });
+    console.error(`[PUT /api/products] Error updating product:`, error);
+    return NextResponse.json({ 
+      message: 'Error updating product', 
+      error: error instanceof Error ? error.message : String(error) 
+    }, { status: 500 });
   }
 }
 
