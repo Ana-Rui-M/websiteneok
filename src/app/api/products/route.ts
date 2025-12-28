@@ -45,9 +45,21 @@ export async function POST(request: NextRequest) {
       await batch.commit();
     }
 
+    // Clean up product object to remove undefined fields and potential recursive references
+    const productData: any = {};
+    const allowedFields = ['name', 'description', 'price', 'stock', 'type', 'category', 'publisher', 'author', 'image', 'status', 'stockStatus', 'dataAiHint'];
+    
+    allowedFields.forEach(field => {
+      if ((product as any)[field] !== undefined) {
+        productData[field] = (product as any)[field];
+      }
+    });
+
+    productData.id = productId;
+
     // Save product to Firestore
     const docRef = firestore.collection('products').doc(productId);
-    await docRef.set(product);
+    await docRef.set(productData);
 
     return NextResponse.json({ message: 'Product created', productId: productId }, { status: 201 });
   } catch (error) {

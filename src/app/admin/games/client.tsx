@@ -140,7 +140,7 @@ export default function GamesPageClient({ initialProducts, initialSchools }: Gam
                   {t('games_page.show_sold_out')}
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuRadioGroup value={schoolFilter} onValueChange={setSchoolFilter}>
-                  <DropdownMenuLabel>{t('books_page.filter_by_school')}</DropdownMenuLabel>
+                  <DropdownMenuLabel>{t('games_page.filter_by_school')}</DropdownMenuLabel>
                   <DropdownMenuRadioItem value="all">
                     {t('common.all_schools')}
                   </DropdownMenuRadioItem>
@@ -188,7 +188,7 @@ export default function GamesPageClient({ initialProducts, initialSchools }: Gam
                       alt={getDisplayName(product.name, language)}
                       className="aspect-square rounded-md object-cover"
                       height="64"
-                      src={"https://placehold.co/64x64.png"}
+                      src={Array.isArray(product.image) ? product.image[0] : (product.image || "https://placehold.co/64x64.png")}
                       width="64"
                     />
                   </TableCell>
@@ -212,7 +212,7 @@ export default function GamesPageClient({ initialProducts, initialSchools }: Gam
                     })}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                     <Badge variant="outline">{0}</Badge>
+                     <Badge variant="outline">{Array.isArray(product.image) ? product.image.length : (product.image ? 1 : 0)}</Badge>
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

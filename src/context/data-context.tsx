@@ -168,22 +168,34 @@ export const DataProvider = ({
     }
   };
 
-  // Product mutations
+   // Product mutations
   const addProduct = async (product: Product, readingPlanData: {schoolId: string, grade: number | string, status: 'mandatory' | 'recommended'}[]) => {
     setLoading(true);
      try {
+      console.log("Adding product...", product);
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ product, readingPlan: readingPlanData }),
       });
-      if (!response.ok) throw new Error('Failed to add product');
-       const newProduct = await response.json();
-   // Refetch products and reading plan from backend
-   const updatedProducts = await fetch('/api/products');
-   setProducts(await updatedProducts.json());
-   const rpResponse = await fetch('/api/reading-plan');
-   setReadingPlan(await rpResponse.json());
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Add Product API Error:', errorData);
+        throw new Error(errorData.message || 'Failed to add product');
+      }
+
+       const { productId } = await response.json();
+       const newProduct = { ...product, id: productId };
+
+       // Refetch products and reading plan from backend to ensure state consistency
+       const [productsRes, rpRes] = await Promise.all([
+         fetch('/api/products'),
+         fetch('/api/reading-plan')
+       ]);
+       
+       if (productsRes.ok) setProducts(await productsRes.json());
+       if (rpRes.ok) setReadingPlan(await rpRes.json());
  
        toast({
          title: "Product Added",
@@ -194,8 +206,12 @@ export const DataProvider = ({
        });
        return newProduct;
      } catch (error) {
-       console.error(error);
-       toast({ title: "Error", description: "Could not add product.", variant: "destructive" });
+       console.error('Add product failed:', error);
+       toast({ 
+         title: "Error", 
+         description: (error as Error).message || "Could not add product.", 
+         variant: "destructive" 
+       });
        throw error;
      } finally {
          setLoading(false);
@@ -204,17 +220,27 @@ export const DataProvider = ({
    const updateProduct = async (id: string, product: Product) => {
      setLoading(true);
      try {
+       console.log(`Updating product ${id}...`, product);
        const response = await fetch(`/api/products/${id}`, {
          method: 'PUT',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({ product }),
        });
-       if (!response.ok) throw new Error('Failed to update product');
-   // Refetch products and reading plan from backend
-   const updatedProducts = await fetch('/api/products');
-   setProducts(await updatedProducts.json());
-   const rpResponse = await fetch('/api/reading-plan');
-   setReadingPlan(await rpResponse.json());
+       
+       if (!response.ok) {
+         const errorData = await response.json().catch(() => ({}));
+         console.error('Update API Error:', errorData);
+         throw new Error(errorData.message || 'Failed to update product');
+       }
+
+       // Refetch products and reading plan from backend to ensure state consistency
+       const [productsRes, rpRes] = await Promise.all([
+         fetch('/api/products'),
+         fetch('/api/reading-plan')
+       ]);
+       
+       if (productsRes.ok) setProducts(await productsRes.json());
+       if (rpRes.ok) setReadingPlan(await rpRes.json());
        
        toast({
          title: "Product Updated",
@@ -224,8 +250,13 @@ export const DataProvider = ({
              : `${product.name?.pt || product.name?.en} was updated successfully.`
        });
      } catch (error) {
-       console.error(error);
-       toast({ title: "Error", description: "Could not update product.", variant: "destructive" });
+       console.error('Update product failed:', error);
+       toast({ 
+         title: "Error", 
+         description: (error as Error).message || "Could not update product.", 
+         variant: "destructive" 
+       });
+       throw error;
      } finally {
          setLoading(false);
      }

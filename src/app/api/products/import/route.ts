@@ -91,17 +91,20 @@ export async function POST(request: Request) {
         const stockStatusVal: 'in_stock' | 'out_of_stock' | 'sold_out' = (row.stockStatus === 'out_of_stock' || row.stockStatus === 'sold_out') ? row.stockStatus : 'in_stock';
 
         const productData: any = {
-          id: row.id,
           price,
           stock,
           type: typeVal,
           stockStatus: stockStatusVal,
         };
+        if (row.id) productData.id = row.id;
         if (nameStr) productData.name = nameStr;
         if (descriptionStr) productData.description = descriptionStr;
+        if (imageVal) productData.image = imageVal;
         if (categoryVal) productData.category = categoryVal;
         if (publisherVal) productData.publisher = publisherVal;
-        if (imageVal) productData.image = imageVal;
+        if (row.author) productData.author = String(row.author).trim();
+        if (row.dataAiHint) productData.dataAiHint = String(row.dataAiHint).trim();
+        if (row.status) productData.status = String(row.status).trim();
 
         console.log("Processing row:", JSON.stringify(productData));
 
@@ -116,16 +119,17 @@ export async function POST(request: Request) {
           continue;
         }
 
-        if (row.id) {
-          const productRef = productsCollection.doc(row.id);
-          batch.update(productRef, productData);
-          importResults.push({ status: "updated", message: "Product updated successfully", data: productData });
-        } else {
-          const productRef = productsCollection.doc();
-          productData.id = productRef.id;
-          batch.set(productRef, productData);
-          importResults.push({ status: "added", message: "Product added successfully", data: productData });
-        }
+        // Use a persistent ID or generate a new one
+        const productId = row.id || productsCollection.doc().id;
+        productData.id = productId;
+
+        const docRef = productsCollection.doc(productId);
+        batch.set(docRef, productData, { merge: true });
+        importResults.push({
+          status: row.id ? "updated" : "added",
+          message: row.id ? "Product updated successfully" : "Product added successfully",
+          data: productData
+        });
       } catch (rowError) {
         console.error("Error processing row:", row, rowError);
         importResults.push({
