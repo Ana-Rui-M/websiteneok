@@ -55,13 +55,22 @@ const gameBaseSchema = z.object({
       en: z.string().min(1, "O nome em Inglês é obrigatório."),
     }),
   ]).optional(),
-  description: z.union([
-    z.string().min(10, "A descrição deve ter pelo menos 10 caracteres."),
+  description: z.preprocess((val) => {
+    if (typeof val === 'string' && val.trim() === '') return undefined;
+    if (val && typeof val === 'object') {
+      const v: any = val;
+      const pt = typeof v.pt === 'string' ? v.pt.trim() : '';
+      const en = typeof v.en === 'string' ? v.en.trim() : '';
+      if (!pt && !en) return undefined;
+    }
+    return val;
+  }, z.union([
+    z.string(),
     z.object({
-      pt: z.string().min(10, "A descrição em Português deve ter pelo menos 10 caracteres."),
-      en: z.string().min(10, "A descrição em Inglês deve ter pelo menos 10 caracteres."),
+      pt: z.string(),
+      en: z.string(),
     }),
-  ]).optional(),
+  ])).optional(),
   price: z.coerce.number().min(0, "O preço deve ser um número positivo."),
   stock: z.coerce.number().min(0, "O stock deve ser um número positivo."),
   stockStatus: z.enum(['in_stock', 'out_of_stock', 'sold_out']),

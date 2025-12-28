@@ -7,7 +7,7 @@ import BooksPageClient from "./client";
 async function getAdminData() {
     const productsCollection = firestore.collection('products');
     const productsSnapshot = await productsCollection.get();
-    const products = productsSnapshot.docs.map(doc => doc.data() as Product);
+    const products = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
 
     const readingPlanCollection = firestore.collection('readingPlan');
     const readingPlanSnapshot = await readingPlanCollection.get();

@@ -68,11 +68,10 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
   const [publisherFilter, setPublisherFilter] = useState("all");
   const [schoolFilter, setSchoolFilter] = useState("all");
 
-  const bookProducts = useMemo(() => products.filter(p => p.type === 'book'), [products]);
+  const bookProducts = useMemo(() => products.filter(p => p.type === 'book' || !p.type), [products]);
 
   const getProductName = (product: Product) => {
-    if (!product || !product.id) return 'No ID';
-    return product.id; // Now returns the document ID as the name
+    return getDisplayName(product.name, language) || '';
   }
 
   const getBookReadingPlan = useCallback((productId: string) => {
@@ -81,8 +80,8 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
 
   const filteredProducts = useMemo(() => {
     return bookProducts.filter((product) => {
-      const name = getProductName(product) || '';
-      const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
+      const nameText = getProductName(product);
+      const matchesSearch = nameText.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStock = stockFilter === 'all' || product.stockStatus === stockFilter;
       const matchesPublisher = publisherFilter === 'all' || product.publisher === publisherFilter;
       const matchesSchool = schoolFilter === 'all' || getBookReadingPlan(product.id).some((item: ReadingPlanItem) => item.schoolId === schoolFilter);

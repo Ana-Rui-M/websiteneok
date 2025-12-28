@@ -140,9 +140,9 @@ export default function GamesPageClient({ initialProducts, initialSchools }: Gam
                   {t('games_page.show_sold_out')}
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuRadioGroup value={schoolFilter} onValueChange={setSchoolFilter}>
-                  <DropdownMenuLabel>{t('filter_by_school')}</DropdownMenuLabel>
+                  <DropdownMenuLabel>{t('books_page.filter_by_school')}</DropdownMenuLabel>
                   <DropdownMenuRadioItem value="all">
-                    {t('all_schools')}
+                    {t('common.all_schools')}
                   </DropdownMenuRadioItem>
                   {schools.map((school) => (
                     <DropdownMenuRadioItem key={school.id} value={school.id}>

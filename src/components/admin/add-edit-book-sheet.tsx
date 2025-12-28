@@ -50,13 +50,22 @@ const bookBaseSchema = z.object({
       en: z.string().min(3, "O nome em Inglês deve ter pelo menos 3 caracteres."),
     }),
   ]).optional(),
-  description: z.union([
-    z.string().min(10, "A descrição deve ter pelo menos 10 caracteres."),
+  description: z.preprocess((val) => {
+    if (typeof val === 'string' && val.trim() === '') return undefined;
+    if (val && typeof val === 'object') {
+      const v: any = val;
+      const pt = typeof v.pt === 'string' ? v.pt.trim() : '';
+      const en = typeof v.en === 'string' ? v.en.trim() : '';
+      if (!pt && !en) return undefined;
+    }
+    return val;
+  }, z.union([
+    z.string(),
     z.object({
-      pt: z.string().min(10, "A descrição em Português deve ter pelo menos 10 caracteres."),
-      en: z.string().min(10, "A descrição em Inglês deve ter pelo menos 10 caracteres."),
+      pt: z.string(),
+      en: z.string(),
     }),
-  ]).optional(),
+  ]).optional()),
   price: z.coerce.number().min(0, "O preço deve ser um número positivo."),
   stock: z.coerce.number().min(0, "O stock deve ser um número positivo."),
   category: z.string().min(1, "A categoria é obrigatória."),
@@ -95,7 +104,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
     resolver: zodResolver(bookBaseSchema),
     defaultValues: {
       name: { pt: "", en: "" },
-      description: "",
+      description: undefined as any,
       price: 0,
       stock: 0,
       category: "",
@@ -140,7 +149,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
           }));
         form.reset({
           name: typeof book.name === 'string' ? book.name : (book.name || { pt: "", en: "" }),
-          description: typeof book.description === 'string' ? book.description : (book.description || { pt: "", en: "" }),
+          description: typeof book.description === 'string' ? book.description : (book.description ? book.description : undefined as any),
           price: book.price,
           stock: book.stock,
           category: book.category,
@@ -183,10 +192,24 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
     }
 
     try {
+      const descVal = (() => {
+        const v: any = data.description;
+        if (typeof v === 'string') {
+          const s = v.trim();
+          return s.length > 0 ? s : undefined;
+        }
+        if (v && typeof v === 'object') {
+          const pt = (v.pt ?? '').trim();
+          const en = (v.en ?? '').trim();
+          return pt || en ? v : undefined;
+        }
+        return undefined;
+      })();
+
       const productData: Product = {
         id: book?.id || "",
         name: typeof data.name === 'string' ? data.name : (data.name || { pt: '', en: '' }),
-        description: typeof data.description === 'string' ? data.description : (data.description || { pt: '', en: '' }),
+        description: descVal as any,
         price: data.price,
         stock: data.stock,
         type: "book",

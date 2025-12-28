@@ -3,12 +3,12 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { normalizeImageUrl } from '@/lib/utils';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';
+import { useToast } from '@/hooks/use-toast';
 
 interface ImageUploadProps {
   label?: string;
@@ -23,29 +23,58 @@ export function ImageUpload({ label = 'Imagem', value, onChange, multiple = fals
   const [progress, setProgress] = useState<number>(0);
   const images: string[] = Array.isArray(value) ? value : (value ? [value] : []);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { toast } = useToast();
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setIsUploading(true);
     setProgress(0);
     try {
-      const uploadedRaw: (string | null)[] = await Promise.all(
-        Array.from(files).map(async (file) => {
+      const uploadedRaw: (string | null)[] = [];
+      const filesArray = Array.from(files);
+      
+      for (const file of filesArray) {
+        try {
           const compressed = await compressFile(file);
-          const url = await uploadToFirebase(compressed, folder, (p) => setProgress(p));
-          return url;
-        })
-      );
+          const url = await uploadToFirebase(compressed, folder, (p) => {
+            // If multiple files, show an average progress or just the current file progress
+            setProgress(p);
+          });
+          if (url) uploadedRaw.push(url);
+        } catch (err) {
+          console.error(`Error uploading file ${file.name}:`, err);
+          toast({
+            title: 'Erro no ficheiro: ' + file.name,
+            description: (err as any)?.message || 'Falha ao carregar este ficheiro.',
+            variant: 'destructive',
+          });
+        }
+      }
+
       const uploaded: string[] = uploadedRaw.filter((u): u is string => !!u && typeof u === 'string' && u.length > 0);
       if (multiple) {
         const nextArr = [...images, ...uploaded];
         onChange(nextArr);
-      } else {
-        const nextStr = uploaded[0] || images[0] || '';
-        onChange(nextStr);
+      } else if (uploaded.length > 0) {
+        onChange(uploaded[0]);
+      }
+      
+      if (uploaded.length === 0 && filesArray.length > 0) {
+        toast({
+          title: 'Falha no upload',
+          description: 'Não foi possível carregar nenhuma imagem. Tente novamente.',
+          variant: 'destructive',
+        });
       }
     } catch (e) {
       console.error(e);
+      toast({
+        title: 'Erro de upload',
+        description: (e as any)?.message || 'Ocorreu um erro ao carregar a imagem.',
+        variant: 'destructive',
+      });
     } finally {
       setIsUploading(false);
       setProgress(0);
@@ -94,6 +123,16 @@ export function ImageUpload({ label = 'Imagem', value, onChange, multiple = fals
       }
     } catch {}
   };
+  const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const dt = e.dataTransfer;
+    if (dt && dt.files && dt.files.length > 0) {
+      await handleFiles(dt.files);
+    }
+  };
+  const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
 
   const removeImage = (idx: number) => {
     if (multiple) {
@@ -107,31 +146,53 @@ export function ImageUpload({ label = 'Imagem', value, onChange, multiple = fals
   return (
     <div className="space-y-2">
       {label && <Label>{label}</Label>}
-      <div className="rounded-md border p-3 text-sm bg-muted/30" onPaste={onPaste}>
-        <div className="flex flex-wrap items-center gap-2">
-          <Input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple={multiple}
-            capture="environment"
-            onChange={(e) => handleFiles(e.target.files)}
-          />
-          <Button type="button" variant="outline" disabled={isUploading} onClick={() => fileInputRef.current?.click()}>
-            {isUploading ? (progress > 0 ? `A carregar... ${progress}%` : 'A carregar...') : 'Selecionar'}
-          </Button>
-          <Button type="button" variant="outline" onClick={readClipboard}>
-            Colar da Área de Transferência
-          </Button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple={multiple}
+        onChange={(e) => handleFiles(e.target.files)}
+        className="hidden"
+      />
+      <div
+        className="rounded-md border bg-muted/30 p-4 text-sm"
+        onPaste={onPaste}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        onClick={() => fileInputRef.current?.click()}
+        role="button"
+        aria-label="Área de upload de imagem"
+      >
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex-1">
+            <div className="text-muted-foreground">
+              Arraste e solte a imagem aqui, ou clique para selecionar
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" disabled={isUploading}>
+              {isUploading ? (progress > 0 ? `A carregar... ${progress}%` : 'A carregar...') : 'Selecionar'}
+            </Button>
+            <Button type="button" variant="ghost" onClick={readClipboard}>
+              Colar
+            </Button>
+          </div>
+        </div>
+        {isUploading && (
+          <div className="mt-3 h-1 w-full rounded bg-muted overflow-hidden">
+            <div className="h-1 bg-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
+          </div>
+        )}
+        {isIOS && (
           <div
             contentEditable
             suppressContentEditableWarning
-            className="min-w-[180px] flex-1 rounded-md border bg-background px-2 py-1 text-muted-foreground"
+            className="mt-3 min-h-[36px] rounded-md border bg-background px-2 py-2 text-xs text-muted-foreground"
             onPaste={onPaste}
           >
-            Toque e cole aqui (iOS)
+            Toque aqui e cole a imagem (iOS)
           </div>
-        </div>
+        )}
       </div>
       {images.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -158,14 +219,35 @@ async function uploadToFirebase(file: File, folder?: string, onProgress?: (p: nu
   const base = folder ? folder.replace(/\/+$/,'') : 'uploads';
   const key = `${base}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
   const imageRef = ref(storage, key);
-  return await new Promise<string | null>((resolve) => {
+  return await new Promise<string | null>((resolve, reject) => {
     const task = uploadBytesResumable(imageRef, file, { contentType: file.type || 'application/octet-stream' });
     task.on('state_changed', (snap) => {
       const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+      console.log(`Upload progress: ${pct}%`, snap.state);
       if (onProgress) onProgress(pct);
-    }, () => resolve(null), async () => {
-      const url = await getDownloadURL(imageRef);
-      resolve(url);
+    }, (err) => {
+      console.error("Firebase Upload Error:", err);
+      reject(err);
+    }, async () => {
+      console.log("Upload complete, getting download URL...");
+      let attempts = 0;
+      let url: string | null = null;
+      while (attempts < 5 && !url) {
+        try {
+          url = await getDownloadURL(task.snapshot.ref);
+          console.log("Download URL obtained:", url);
+        } catch (e) {
+          console.warn(`Attempt ${attempts + 1} to get URL failed:`, e);
+          await new Promise(r => setTimeout(r, 1000 * (attempts + 1)));
+          attempts += 1;
+        }
+      }
+      if (!url) {
+        console.error("Failed to get download URL after 5 attempts");
+        reject(new Error("Não foi possível obter o link da imagem após o carregamento."));
+      } else {
+        resolve(url);
+      }
     });
   });
 }

@@ -30,26 +30,30 @@ export async function PUT(
       const batch = firestore.batch();
       updatedProduct.readingPlan.forEach((plan: ReadingPlanItem) => {
         const planId = plan.id || uuidv4();
+        // Always use 'readingPlan' as the canonical collection
         const planRef = firestore.collection('readingPlan').doc(planId);
-        batch.set(planRef, { ...plan, id: planId, productId: id });
+        batch.set(planRef, { ...plan, id: planId, productId: id }, { merge: true });
       });
       await batch.commit();
     }
 
-    await productRef.update({
+    const updateData: any = {
       name: updatedProduct.name,
       description: updatedProduct.description,
       price: updatedProduct.price,
       stock: updatedProduct.stock,
       type: updatedProduct.type,
-      dataAiHint: updatedProduct.dataAiHint,
-      category: updatedProduct.category,
-      publisher: updatedProduct.publisher,
-      author: updatedProduct.author,
       stockStatus: updatedProduct.stockStatus,
-      status: updatedProduct.status,
       image: updatedProduct.image,
-    });
+    };
+
+    if (updatedProduct.dataAiHint) updateData.dataAiHint = updatedProduct.dataAiHint;
+    if (updatedProduct.category) updateData.category = updatedProduct.category;
+    if (updatedProduct.publisher) updateData.publisher = updatedProduct.publisher;
+    if (updatedProduct.author) updateData.author = updatedProduct.author;
+    if (updatedProduct.status) updateData.status = updatedProduct.status;
+
+    await productRef.update(updateData);
 
     return NextResponse.json({ message: 'Product updated successfully' }, { status: 200 });
   } catch (error) {

@@ -9,7 +9,7 @@ export async function GET() {
     const snapshot = await productsRef.get();
     const products: Product[] = [];
     snapshot.forEach(doc => {
-      products.push(doc.data() as Product);
+      products.push({ id: doc.id, ...doc.data() } as Product);
     });
     return NextResponse.json(products, { status: 200 });
   } catch (error) {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       ? body.readingPlan
       : (product?.readingPlan || []);
 
-    if (!product || !product.name || !product.category || !product.price || !product.image || (Array.isArray(product.image) ? product.image.length === 0 : !product.image)) {
+    if (!product || !product.name || !product.price || !product.image || (Array.isArray(product.image) ? product.image.length === 0 : !product.image)) {
       return NextResponse.json({ message: 'Missing required product fields' }, { status: 400 });
     }
 
