@@ -39,6 +39,7 @@ const readingPlanItemSchema = z.object({
   productId: z.string().optional(),
   schoolId: z.string().min(1, "A escola é obrigatória."),
   grade: z.union([z.coerce.number(), z.string()]).refine(val => val !== '', "O ano é obrigatório."),
+  gradeType: z.enum(["normal", "outros"]).default("normal"),
   status: z.enum(["mandatory", "recommended"]),
 });
 
@@ -121,6 +122,22 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
     name: "readingPlan",
   });
 
+  const getGradeType = (grade: string | number) => {
+    const g = String(grade);
+    if (g === '1-4' || g === '5-9' || g === '10-12' || g.toLowerCase() === 'outros') {
+      return 'outros';
+    }
+    return 'normal';
+  };
+
+  const getDisplayGrade = (grade: string | number) => {
+    const g = String(grade);
+    if (g === '1-4') return '1';
+    if (g === '5-9') return '5';
+    if (g === '10-12') return '10';
+    return g;
+  };
+
   useEffect(() => {
     const fetchCategoriesIfNeeded = async () => {
       if (isOpen && categories.length === 0) {
@@ -144,7 +161,8 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
             id: rp.id || "",
             productId: rp.productId || "",
             schoolId: rp.schoolId,
-            grade: rp.grade,
+            grade: getDisplayGrade(rp.grade),
+            gradeType: getGradeType(rp.grade),
             status: rp.status,
           }));
         form.reset({
@@ -179,6 +197,16 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
     console.log("onSubmit called with data:", data);
     setAsyncError(null);
     setIsSaving(true);
+
+    const mapGradeToCycle = (grade: string | number, gradeType: string) => {
+      if (gradeType !== 'outros') return grade;
+      const g = String(grade).replace(/[^0-9]/g, '');
+      const n = parseInt(g);
+      if (n >= 1 && n <= 4) return '1-4';
+      if (n >= 5 && n <= 9) return '5-9';
+      if (n >= 10 && n <= 12) return '10-12';
+      return 'Outros';
+    };
 
     // Enforce image required only on create
     if (!book) {
@@ -218,11 +246,11 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
       author: data.author,
       stockStatus: data.stockStatus,
       image: data.image,
-      readingPlan: data.readingPlan?.map((rp) => ({
+      readingPlan: data.readingPlan?.map((rp: any) => ({
         id: rp.id || "",
         productId: rp.productId || "",
           schoolId: rp.schoolId,
-          grade: rp.grade,
+          grade: mapGradeToCycle(rp.grade, rp.gradeType),
           status: rp.status,
         })) || [],
       };
@@ -481,8 +509,30 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
                     control={form.control}
                     name={`readingPlan.${index}.grade`}
                     render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <Input type="number" placeholder={t('books_page.grade')} {...field} />
+                      <FormItem className="w-20">
+                        <FormControl>
+                          <Input placeholder={t('books_page.grade')} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`readingPlan.${index}.gradeType`}
+                    render={({ field }) => (
+                      <FormItem className="w-28">
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Tipo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="outros">Outros</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}

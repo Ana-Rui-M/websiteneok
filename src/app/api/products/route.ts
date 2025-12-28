@@ -8,7 +8,12 @@ import { getCachedProducts } from '@/lib/admin-cache';
 export async function GET() {
   try {
     const products = await getCachedProducts();
-    return NextResponse.json(products, { status: 200 });
+    // Client-facing filtering: exclude sold_out and omit publisher
+    const filteredProducts = products
+      .filter(p => p.stockStatus !== 'sold_out')
+      .map(({ publisher, ...rest }) => rest);
+      
+    return NextResponse.json(filteredProducts, { status: 200 });
   } catch (error) {
     console.error('Error fetching products:', error);
     return NextResponse.json({ message: 'Error fetching products' }, { status: 500 });

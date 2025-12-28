@@ -79,6 +79,7 @@ export const pt = {
     mandatory_kit_name: 'Kit Obrigatório do {{grade}} - {{school}}',
     recommended_kit_name: 'Kit Recomendado do {{grade}} - {{school}}',
     complete_kit_name: 'Kit Completo do {{grade}} - {{school}}',
+    individual_purchase_only: 'Apenas disponível para compra individual (Kits desativados)',
     tabs: {
         reading_plans: 'Planos de Leitura',
         all_books: 'Todos os Livros',

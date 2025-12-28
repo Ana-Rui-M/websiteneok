@@ -152,13 +152,12 @@ export const ShopPageContent = ({
         const productDescription = typeof p.description === 'string'
             ? p.description
             : (typeof p.description === 'object' ? (p.description[language] || p.description.pt || '') : '');
-        const productPublisher = p.publisher || '';
+        
         return p.type === 'book' &&
                p.stockStatus !== 'sold_out' &&
                (
                  productName.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
-                 productDescription.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
-                 productPublisher.toLowerCase().includes(bookSearchQuery.toLowerCase())
+                 productDescription.toLowerCase().includes(bookSearchQuery.toLowerCase())
                ) &&
                (selectedBookCategory === 'all' || p.category === selectedBookCategory)
     })
@@ -205,8 +204,16 @@ export const ShopPageContent = ({
       const gradeB = b[0];
 
       const getOrder = (grade: string) => {
-          if (grade.toLowerCase() === 'iniciação' || grade.toLowerCase() === 'reception') return -1;
-          if (grade.toLowerCase() === 'outros' || grade.toLowerCase() === 'others') return 100;
+          const lowerGrade = grade.toLowerCase();
+          if (lowerGrade === 'iniciação' || lowerGrade === 'reception') return -1;
+          
+          // New Cycle Organization
+          if (lowerGrade === '1-4' || lowerGrade === '1st-4th') return 4.5;
+          if (lowerGrade === '5-9' || lowerGrade === '5th-9th') return 9.5;
+          if (lowerGrade === '10-12' || lowerGrade === '10th-12th') return 12.5;
+          
+          if (lowerGrade === 'outros' || lowerGrade === 'others') return 100;
+          
           const num = parseInt(grade, 10);
           return isNaN(num) ? 99 : num;
       };
@@ -217,13 +224,13 @@ export const ShopPageContent = ({
       return orderA - orderB;
   };
 
-  const sortGradeKeys = (gradeA: string, gradeB: string) => {
-    return customGradeSort([gradeA, { mandatory: [], recommended: [], all: [] }], [gradeB, { mandatory: [], recommended: [], all: [] }]);
-  };
-
   const getGradeDisplayName = (grade: string) => {
-    if (String(grade).toLowerCase() === 'iniciação') return t('grades.reception');
-    if (String(grade).toLowerCase() === 'outros') return t('grades.others');
+    const lowerGrade = String(grade).toLowerCase();
+    if (lowerGrade === 'iniciação') return t('grades.reception');
+    if (lowerGrade === 'outros') return t('grades.others');
+    if (lowerGrade === '1-4') return "1ª - 4ª Classe (Outros)";
+    if (lowerGrade === '5-9') return "5ª - 9ª Classe (Outros)";
+    if (lowerGrade === '10-12') return "10ª - 12ª Classe (Outros)";
     return `${grade}${t('grades.grade')}`;
   };
 
@@ -263,8 +270,21 @@ export const ShopPageContent = ({
                           {getGradeDisplayName(grade)}
                         </AccordionTrigger>
                         <AccordionContent>
-                           {String(grade).toLowerCase() === 'outros' || showIndividual === grade ? (
-                              <ProductGridWithBadges products={gradeProducts.all} grade={grade} schoolReadingPlan={schoolReadingPlan} />
+                           {String(grade).toLowerCase() === 'outros' || 
+                            String(grade).toLowerCase() === '1-4' || 
+                            String(grade).toLowerCase() === '5-9' || 
+                            String(grade).toLowerCase() === '10-12' || 
+                            showIndividual === grade ? (
+                              <div className="space-y-4">
+                                {(String(grade).toLowerCase() === '1-4' || 
+                                  String(grade).toLowerCase() === '5-9' || 
+                                  String(grade).toLowerCase() === '10-12') && (
+                                  <div className="rounded-md bg-blue-50 p-4 text-sm text-blue-700">
+                                    {t('shop.individual_purchase_only')}
+                                  </div>
+                                )}
+                                <ProductGridWithBadges products={gradeProducts.all} grade={grade} schoolReadingPlan={schoolReadingPlan} />
+                              </div>
                            ) : (
                               <div className="space-y-6">
                                   <div className="grid gap-6 lg:grid-cols-2">
