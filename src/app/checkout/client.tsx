@@ -25,12 +25,10 @@ export default function CheckoutClient() {
           </p>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-2">
-          <div className="lg:col-span-1">
+        <div className="mt-12 flex justify-center">
+          <div className="w-full max-w-2xl">
             <CheckoutForm />
           </div>
-
-
         </div>
       </div>
     </main>

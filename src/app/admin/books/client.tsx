@@ -80,7 +80,7 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
   const filteredProducts = useMemo(() => {
     return bookProducts.filter((product) => {
       const nameText = getProductName(product);
-      const matchesSearch = nameText.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = normalizeSearch(nameText).includes(normalizeSearch(searchQuery));
       const matchesStock = stockFilter === 'all' || product.stockStatus === stockFilter;
       const matchesPublisher = publisherFilter === 'all' || product.publisher === publisherFilter;
       const matchesSchool = schoolFilter === 'all' || getBookReadingPlan(product.id).some((item: ReadingPlanItem) => item && item.schoolId === schoolFilter);

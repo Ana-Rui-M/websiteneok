@@ -79,7 +79,7 @@ export default function GamesPageClient({ initialProducts, initialSchools, initi
     return (gameProducts || []).filter((product) => {
       if (!product) return false;
       const name = getDisplayName(product.name, language) || '';
-      const matchesSearch = name.toLowerCase().includes((searchQuery || '').toLowerCase());
+      const matchesSearch = normalizeSearch(name).includes(normalizeSearch(searchQuery || ''));
       const matchesStock = showSoldOut || product.stockStatus !== 'sold_out';
 
       const productReadingPlan = (readingPlan || []).filter(rp => rp && rp.productId === product.id);

@@ -65,7 +65,7 @@ export const pt = {
     didactic_aids: 'Auxiliares Didáticos',
     essential: 'Essencial',
     most_complete: 'Mais Completo',
-    mandatory_kit: 'Kit Obrigatórios ({{count}} items)',
+    mandatory_kit: 'Kit Obrigatório ({{count}} items)',
     buy_all_mandatory: 'Compre todos os items obrigatórios para o ano letivo.',
     complete_kit: 'Kit Completo ({{count}} items)',
     buy_all_for_school_year: 'Compre o kit completo com todos os livros (Obrigatórios + Recomendados).',
@@ -77,7 +77,7 @@ export const pt = {
     search_games_placeholder: 'Pesquisar por nome do jogo...',
     filter_by_category: 'Filtrar por categoria',
     all_categories: 'Todas as Categorias',
-    mandatory_kit_name: 'Kit Obrigatórios do {{grade}} - {{school}}',
+    mandatory_kit_name: 'Kit Obrigatório do {{grade}} - {{school}}',
     complete_kit_name: 'Kit Completo do {{grade}} - {{school}}',
     individual_purchase_only: 'Apenas disponível para compra individual (Kits desativados)',
     tabs: {

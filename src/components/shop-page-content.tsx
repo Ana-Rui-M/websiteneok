@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useData } from "@/context/data-context";
 import { useLanguage } from "@/context/language-context";
-import { getDisplayName } from "@/lib/utils";
+import { getDisplayName, normalizeSearch } from "@/lib/utils";
 import type { School, Product, ReadingPlanItem, Category } from "@/lib/types";
 import { SidebarMenuSkeleton } from "@/components/ui/sidebar";
 
@@ -60,6 +60,13 @@ export const ShopPageContent = ({
     undefined
   );
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams, activeTab]);
   const [showIndividual, setShowIndividual] = useState<string | null>(null);
   const { addKitToCart } = useCart();
 
@@ -165,9 +172,18 @@ export const ShopPageContent = ({
   const filteredGames = useMemo(() => {
     return products.filter(p => {
         const productName = getDisplayName(p.name, language);
+        const productDescription = typeof p.description === 'string'
+            ? p.description
+            : (typeof p.description === 'object' ? (p.description[language] || p.description.pt || '') : '');
+        
+        const normalizedSearch = normalizeSearch(gameSearchQuery);
+        
         return p.type === 'game' && 
                p.stockStatus !== 'sold_out' &&
-               productName.toLowerCase().includes(gameSearchQuery.toLowerCase()) &&
+               (
+                 normalizeSearch(productName).includes(normalizedSearch) ||
+                 normalizeSearch(productDescription).includes(normalizedSearch)
+               ) &&
                (selectedGameCategory === 'all' || p.category === selectedGameCategory)
     })
   }, [products, gameSearchQuery, selectedGameCategory, language]);
@@ -183,11 +199,13 @@ export const ShopPageContent = ({
             ? p.description
             : (typeof p.description === 'object' ? (p.description[language] || p.description.pt || '') : '');
         
+        const normalizedSearch = normalizeSearch(bookSearchQuery);
+        
         return p.type === 'book' &&
                p.stockStatus !== 'sold_out' &&
                (
-                 productName.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
-                 productDescription.toLowerCase().includes(bookSearchQuery.toLowerCase())
+                 normalizeSearch(productName).includes(normalizedSearch) ||
+                 normalizeSearch(productDescription).includes(normalizedSearch)
                ) &&
                (selectedBookCategory === 'all' || p.category === selectedBookCategory)
     })
@@ -293,37 +311,37 @@ export const ShopPageContent = ({
                            ) : (
                               <div className="space-y-6">
                                   <div className="grid gap-6 lg:grid-cols-2">
-                                      {/* Kit Obrigatório */}
-                                      {gradeProducts.mandatory.length > 0 && (
-                                          <div key="mandatory-kit" className="flex flex-col rounded-xl border-2 border-blue-600 bg-blue-50/30 p-6 shadow-sm transition-all hover:shadow-md">
-                                              <div className="flex items-center justify-between mb-4">
-                                                <div className="flex flex-col">
-                                                  <Badge className="w-fit mb-2 bg-blue-600 hover:bg-blue-700 text-white border-none">{t('shop.essential')}</Badge>
-                                                  <h3 className="font-headline text-2xl font-bold text-blue-900">{t('shop.mandatory_kit', { count: gradeProducts.mandatory.length })}</h3>
-                                                </div>
-                                              </div>
-                                              <p className="text-blue-800/80 mb-6 flex-grow">{t('shop.buy_all_mandatory')}</p>
-                                              <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg" onClick={() => addKitToCart(gradeProducts.mandatory, t('shop.mandatory_kit_name', { grade: getGradeDisplayName(grade), school: getDisplayName(selectedSchool.name, language) }))}>
-                                                  <ShoppingCart className="mr-2 h-5 w-5" /> 
-                                                  {t('common.add_for')} {calculateKitPrice(gradeProducts.mandatory).toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                              </Button>
-                                          </div>
-                                      )}
+              {/* Kit Obrigatório */}
+              {gradeProducts.mandatory.length > 0 && (
+                  <div key="mandatory-kit" className="flex flex-col rounded-xl border-2 border-blue-600 bg-blue-50/30 p-6 shadow-sm transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex flex-col">
+                          <Badge className="w-fit mb-2 bg-blue-600 hover:bg-blue-700 text-white border-none">{t('shop.essential')}</Badge>
+                          <h3 className="font-headline text-2xl font-bold text-blue-900">{t('shop.mandatory_kit', { count: gradeProducts.mandatory.length })}</h3>
+                        </div>
+                      </div>
+                      <p className="text-blue-800/80 mb-6 flex-grow">{t('shop.buy_all_mandatory')}</p>
+                      <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg" onClick={() => addKitToCart(gradeProducts.mandatory, t('shop.mandatory_kit_name', { grade: getGradeDisplayName(grade), school: getDisplayName(selectedSchool.name, language) }))}>
+                          <ShoppingCart className="mr-2 h-5 w-5" /> 
+                          {t('common.add_for')} {calculateKitPrice(gradeProducts.mandatory).toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      </Button>
+                  </div>
+              )}
 
-                                      {/* Kit Completo (Obrigatórios + Recomendados) */}
-                                      {(gradeProducts.mandatory.length > 0 || gradeProducts.recommended.length > 0) && (
-                                          <div key="complete-kit" className="flex flex-col rounded-xl border-2 border-amber-500 bg-amber-50/30 p-6 shadow-sm transition-all hover:shadow-md">
-                                              <div className="flex items-center justify-between mb-4">
-                                                <div className="flex flex-col">
-                                                  <Badge className="w-fit mb-2 bg-amber-500 hover:bg-amber-600 text-white border-none">{t('shop.most_complete')}</Badge>
-                                                  <h3 className="font-headline text-2xl font-bold text-amber-900">
-                                                    {t('shop.complete_kit', { 
-                                                      grade: getGradeDisplayName(grade), 
-                                                      count: gradeProducts.mandatory.length + gradeProducts.recommended.length 
-                                                    })}
-                                                  </h3>
-                                                </div>
-                                              </div>
+              {/* Kit Completo (Obrigatórios + Recomendados) */}
+              {(gradeProducts.mandatory.length > 0 || gradeProducts.recommended.length > 0) && (
+                  <div key="complete-kit" className="flex flex-col rounded-xl border-2 border-amber-500 bg-amber-50/30 p-6 shadow-sm transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex flex-col">
+                          <Badge className="w-fit mb-2 bg-amber-500 hover:bg-amber-600 text-white border-none">Completo</Badge>
+                          <h3 className="font-headline text-2xl font-bold text-amber-900">
+                            {t('shop.complete_kit', { 
+                              grade: getGradeDisplayName(grade), 
+                              count: gradeProducts.mandatory.length + gradeProducts.recommended.length 
+                            })}
+                          </h3>
+                        </div>
+                      </div>
                                               <p className="text-amber-800/80 mb-6 flex-grow">{t('shop.buy_all_for_school_year')}</p>
                                               <Button size="lg" className="w-full bg-amber-500 hover:bg-amber-600 text-white shadow-lg" onClick={() => addKitToCart([...gradeProducts.mandatory, ...gradeProducts.recommended], t('shop.complete_kit_name', { grade: getGradeDisplayName(grade), school: getDisplayName(selectedSchool.name, language) }))}>
                                                   <ShoppingCart className="mr-2 h-5 w-5" /> 
@@ -391,12 +409,12 @@ export const ShopPageContent = ({
                 />
               </div>
               <Select value={selectedBookCategory} onValueChange={setSelectedBookCategory}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder={t('shop.filter_by_category')} />
+                <SelectTrigger className="w-[180px] bg-background">
+                  <SelectValue placeholder={t('shop.all_categories')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem key="all-books" value="all">{t('common.all_categories')}</SelectItem>
-                  {bookCategories.map((category) => (
+                  <SelectItem value="all">{t('shop.all_categories')}</SelectItem>
+                  {bookCategories.map(category => (
                     <SelectItem key={category.id} value={category.id}>
                       {getDisplayName(category.name, language)}
                     </SelectItem>
@@ -429,19 +447,21 @@ export const ShopPageContent = ({
                   onChange={(e) => setGameSearchQuery(e.target.value)}
                 />
               </div>
-              <Select value={selectedGameCategory} onValueChange={setSelectedGameCategory}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder={t('shop.filter_by_category')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem key="all-games" value="all">{t('common.all_categories')}</SelectItem>
-                  {gameCategories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {getDisplayName(category.name, language)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Select value={selectedGameCategory} onValueChange={setSelectedGameCategory}>
+                  <SelectTrigger className="w-[180px] bg-background">
+                    <SelectValue placeholder={t('shop.all_categories')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('shop.all_categories')}</SelectItem>
+                    {gameCategories.map(category => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {getDisplayName(category.name, language)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="mt-6">
               {loading ? (

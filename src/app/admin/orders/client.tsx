@@ -104,11 +104,12 @@ export default function OrdersPageClient({ initialOrders, initialSchools }: Orde
   
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
+    const normalizedSearch = normalizeSearch(searchQuery);
     return orders.filter(order => {
       const searchMatch = 
-        order.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (order.studentName && order.studentName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        order.guardianName.toLowerCase().includes(searchQuery.toLowerCase());
+        normalizeSearch(order.reference).includes(normalizedSearch) ||
+        (order.studentName && normalizeSearch(order.studentName).includes(normalizedSearch)) ||
+        normalizeSearch(order.guardianName).includes(normalizedSearch);
       
       const schoolMatch = schoolFilter === 'all' || order.schoolId === schoolFilter;
       const paymentStatusMatch = paymentStatusFilter === 'all' || order.paymentStatus === paymentStatusFilter;

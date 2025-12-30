@@ -155,8 +155,16 @@ export const sendOrderConfirmationEmail = functions.firestore
     try {
       await transporter.sendMail(mailOptions);
       console.log("Order confirmation email sent to:", order.email);
+      await snapshot.ref.update({ 
+        emailSent: true, 
+        emailSentAt: admin.firestore.FieldValue.serverTimestamp() 
+      });
     } catch (error) {
       console.error("Error sending order confirmation email:", error);
+      await snapshot.ref.update({ 
+        emailSent: false, 
+        emailError: String(error) 
+      });
     }
 
     return null;

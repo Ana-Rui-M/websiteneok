@@ -42,7 +42,12 @@ interface AddEditGameSheetProps {
 
 const readingPlanItemSchema = z.object({
   schoolId: z.string().min(1, "A escola é obrigatória."),
-  grade: z.union([z.coerce.number(), z.string()]).refine(val => val !== '', "O ano é obrigatório."),
+  grade: z.union([z.coerce.number(), z.string()]).refine(val => {
+    const s = String(val);
+    if (s === '') return false;
+    // Permite números simples ou intervalos como 7-9
+    return /^\d+(-\d+)?$/.test(s);
+  }, "O ano deve ser um número ou intervalo (ex: 7-9)."),
   status: z.enum(["mandatory", "recommended", "didactic_aids"]),
 });
 
@@ -417,7 +422,10 @@ export function AddEditGameSheet({
                                     field.onChange(val);
                                   }
                                 } else {
-                                  field.onChange(val);
+                                  // Allow numbers and hyphens for other statuses
+                                  if (/^[\d-]*$/.test(val)) {
+                                    field.onChange(val);
+                                  }
                                 }
                               }}
                             />

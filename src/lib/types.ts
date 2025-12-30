@@ -22,6 +22,7 @@ export const ProductSchema = z.object({
   author: z.string().optional(),
   stockStatus: z.enum(['in_stock', 'out_of_stock', 'sold_out']).optional(),
   status: z.enum(["mandatory", "recommended", "didactic_aids"]).optional(),
+  highlight: z.boolean().optional(),
 });
 
 export const ReadingPlanItemSchema = z.object({
@@ -78,6 +79,7 @@ export interface Product {
   author?: string;
   stockStatus?: 'in_stock' | 'out_of_stock' | 'sold_out';
   status?: "mandatory" | "recommended" | "didactic_aids";
+  highlight?: boolean;
   readingPlan?: ReadingPlanItem[];
 }
 

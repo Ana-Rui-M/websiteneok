@@ -231,7 +231,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
     }
 
     const mapGradeToCycle = (grade: string | number, status: string) => {
-      if (status !== 'didactic_aids') return grade;
+      if (status !== 'didactic_aids') return String(grade);
       const g = String(grade).replace(/[^0-9]/g, '');
       const n = parseInt(g);
       if (n === 1) return '1-4';
@@ -559,7 +559,10 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
                                   field.onChange(val);
                                 }
                               } else {
-                                field.onChange(val);
+                                // Allow numbers and hyphens for other statuses
+                                if (/^[\d-]*$/.test(val)) {
+                                  field.onChange(val);
+                                }
                               }
                             }}
                           />

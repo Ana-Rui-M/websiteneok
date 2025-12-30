@@ -63,3 +63,10 @@ export function normalizeImageUrl(image?: string): string {
   // If it's an unrecognized format (e.g., relative path), fall back
   return fallback;
 }
+
+export function normalizeSearch(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
