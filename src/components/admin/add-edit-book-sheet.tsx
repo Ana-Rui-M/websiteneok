@@ -39,16 +39,22 @@ const readingPlanItemSchema = z.object({
   productId: z.string().optional(),
   schoolId: z.string().min(1, "A escola é obrigatória."),
   grade: z.union([z.coerce.number(), z.string()]).refine(val => val !== '', "O ano é obrigatório."),
-  gradeType: z.enum(["normal", "outros"]).default("normal"),
-  status: z.enum(["mandatory", "recommended"]),
+  status: z.enum(["mandatory", "recommended", "didactic_aids"]),
 });
 
 const bookBaseSchema = z.object({
   name: z.union([
     z.string().min(3, "O nome deve ter pelo menos 3 caracteres."),
     z.object({
-      pt: z.string().min(3, "O nome em Português deve ter pelo menos 3 caracteres."),
-      en: z.string().min(3, "O nome em Inglês deve ter pelo menos 3 caracteres."),
+      pt: z.string().optional(),
+      en: z.string().optional(),
+    }).refine(data => {
+      const ptValid = data.pt && data.pt.trim().length >= 3;
+      const enValid = data.en && data.en.trim().length >= 3;
+      return ptValid || enValid;
+    }, {
+      message: "O nome deve ter pelo menos 3 caracteres em pelo menos um idioma.",
+      path: ["pt"]
     }),
   ]).optional(),
   description: z.preprocess((val) => {
@@ -63,8 +69,8 @@ const bookBaseSchema = z.object({
   }, z.union([
     z.string(),
     z.object({
-      pt: z.string(),
-      en: z.string(),
+      pt: z.string().optional(),
+      en: z.string().optional(),
     }),
   ]).optional()),
   price: z.coerce.number().min(0, "O preço deve ser um número positivo."),
@@ -95,7 +101,7 @@ interface AddEditBookSheetProps {
 
 export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen, setIsOpen, onBookSaved }) => {
   const { language } = useLanguage();
-  const { schools, addProduct, updateProduct, categories, publishers, readingPlan, setCategories } = useData();
+  const { schools, addProduct, updateProduct, categories, publishers, readingPlan, setCategories, products } = useData();
   const { t } = useLanguage();
   const [asyncError, setAsyncError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -122,19 +128,19 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
     name: "readingPlan",
   });
 
-  const getGradeType = (grade: string | number) => {
+  const getStatus = (grade: string | number, originalStatus: string) => {
     const g = String(grade);
-    if (g === '1-4' || g === '5-9' || g === '10-12' || g.toLowerCase() === 'outros') {
-      return 'outros';
+    if (g === '1-4' || g === '5-9' || g === '10-12' || g.toLowerCase() === 'outros' || g.toLowerCase() === 'didactic_aids') {
+      return 'didactic_aids';
     }
-    return 'normal';
+    return originalStatus;
   };
 
   const getDisplayGrade = (grade: string | number) => {
     const g = String(grade);
     if (g === '1-4') return '1';
-    if (g === '5-9') return '5';
-    if (g === '10-12') return '10';
+    if (g === '5-9') return '2';
+    if (g === '10-12') return '3';
     return g;
   };
 
@@ -162,8 +168,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
             productId: rp.productId || "",
             schoolId: rp.schoolId,
             grade: getDisplayGrade(rp.grade),
-            gradeType: getGradeType(rp.grade),
-            status: rp.status,
+            status: getStatus(rp.grade, rp.status) as "mandatory" | "recommended" | "didactic_aids",
           }));
         form.reset({
           name: typeof book.name === 'string' ? book.name : (book.name || { pt: "", en: "" }),
@@ -198,14 +203,45 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
     setAsyncError(null);
     setIsSaving(true);
 
-    const mapGradeToCycle = (grade: string | number, gradeType: string) => {
-      if (gradeType !== 'outros') return grade;
+    // Duplicate title check
+    const currentNamePt = (typeof data.name === 'object' ? data.name?.pt : data.name)?.trim().toLowerCase();
+    const currentNameEn = (typeof data.name === 'object' ? data.name?.en : data.name)?.trim().toLowerCase();
+
+    const isDuplicate = products.some(p => {
+      if (book && p.id === book.id) return false;
+      if (p.type !== 'book') return false;
+
+      const pNamePt = (typeof p.name === 'object' ? p.name?.pt : p.name)?.trim().toLowerCase();
+      const pNameEn = (typeof p.name === 'object' ? p.name?.en : p.name)?.trim().toLowerCase();
+
+      // Check if either PT or EN names match (if they are provided)
+      const ptMatch = currentNamePt && pNamePt && currentNamePt === pNamePt;
+      const enMatch = currentNameEn && pNameEn && currentNameEn === pNameEn;
+
+      return ptMatch || enMatch;
+    });
+
+    if (isDuplicate) {
+      form.setError('name' as any, { 
+        type: 'manual', 
+        message: "Já existe um livro com este nome (em Português ou Inglês)." 
+      });
+      setIsSaving(false);
+      return;
+    }
+
+    const mapGradeToCycle = (grade: string | number, status: string) => {
+      if (status !== 'didactic_aids') return grade;
       const g = String(grade).replace(/[^0-9]/g, '');
       const n = parseInt(g);
-      if (n >= 1 && n <= 4) return '1-4';
-      if (n >= 5 && n <= 9) return '5-9';
-      if (n >= 10 && n <= 12) return '10-12';
-      return 'Outros';
+      if (n === 1) return '1-4';
+      if (n === 2) return '5-9';
+      if (n === 3) return '10-12';
+      return 'didactic_aids';
+    };
+
+    const getFinalStatus = (status: string) => {
+      return status;
     };
 
     // Enforce image required only on create
@@ -236,7 +272,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
 
       const productData: Product = {
         id: book?.id || "",
-        name: typeof data.name === 'string' ? data.name : (data.name || { pt: '', en: '' }),
+        name: (typeof data.name === 'string' ? data.name : (data.name || { pt: '', en: '' })) as any,
         description: descVal as any,
         price: data.price,
         stock: data.stock,
@@ -250,8 +286,8 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
         id: rp.id || "",
         productId: rp.productId || "",
           schoolId: rp.schoolId,
-          grade: mapGradeToCycle(rp.grade, rp.gradeType),
-          status: rp.status,
+          grade: mapGradeToCycle(rp.grade, rp.status),
+          status: getFinalStatus(rp.status) as "mandatory" | "recommended" | "didactic_aids",
         })) || [],
       };
 
@@ -511,28 +547,23 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
                     render={({ field }) => (
                       <FormItem className="w-20">
                         <FormControl>
-                          <Input placeholder={t('books_page.grade')} {...field} />
+                          <Input 
+                            placeholder={t('books_page.grade')} 
+                            {...field} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const status = form.getValues(`readingPlan.${index}.status`);
+                              if (status === 'didactic_aids') {
+                                // Only allow 1, 2, 3 for didactic_aids
+                                if (/^[1-3]?$/.test(val)) {
+                                  field.onChange(val);
+                                }
+                              } else {
+                                field.onChange(val);
+                              }
+                            }}
+                          />
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`readingPlan.${index}.gradeType`}
-                    render={({ field }) => (
-                      <FormItem className="w-28">
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Tipo" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="normal">Normal</SelectItem>
-                            <SelectItem value="outros">Outros</SelectItem>
-                          </SelectContent>
-                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -542,7 +573,19 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
                     name={`readingPlan.${index}.status`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select 
+                          onValueChange={(val) => {
+                            field.onChange(val);
+                            // If switching to didactic_aids, clear or validate grade
+                            if (val === 'didactic_aids') {
+                              const currentGrade = form.getValues(`readingPlan.${index}.grade`);
+                              if (!/^[1-3]$/.test(String(currentGrade))) {
+                                form.setValue(`readingPlan.${index}.grade`, "");
+                              }
+                            }
+                          }} 
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder={t('books_page.select_status')} />
@@ -551,6 +594,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
                           <SelectContent>
                             <SelectItem value="mandatory">{t('books_page.mandatory')}</SelectItem>
                             <SelectItem value="recommended">{t('books_page.recommended')}</SelectItem>
+                            <SelectItem value="didactic_aids">{t('books_page.outros')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

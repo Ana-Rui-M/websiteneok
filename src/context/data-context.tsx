@@ -18,11 +18,12 @@ interface DataContextType {
   addSchool: (school: School) => Promise<void>;
   updateSchool: (school: School) => Promise<void>;
   deleteSchool: (schoolId: string) => Promise<void>;
+  saveSchoolOrder: (orderedSchools: School[]) => Promise<void>;
 
   // Products
   products: Product[];
   setProducts: (products: Product[]) => void;
-  addProduct: (product: Product, readingPlan: {schoolId: string, grade: number | string, status: 'mandatory' | 'recommended'}[]) => Promise<Product>;
+  addProduct: (product: Product, readingPlan: ReadingPlanItem[]) => Promise<Product>;
   updateProduct: (id: string, product: Product) => Promise<void>;
   deleteProduct: (productId: string, imageUrl?: string) => Promise<void>;
 
@@ -113,7 +114,7 @@ export const DataProvider = ({
       const cachedPublishers = cache.get<string[]>('publishers');
       if (cachedPublishers) setPublishers(cachedPublishers);
     }
-  }, []);
+  }, [initialSchools?.length, initialProducts?.length, initialCategories?.length, initialReadingPlan?.length, initialOrders?.length, initialPublishers?.length]);
 
   // Sincronizar estado com cache quando os dados mudam
   useEffect(() => {
@@ -153,8 +154,8 @@ export const DataProvider = ({
       
       const newOrder: Order = {
         ...order,
-        paymentStatus: 'pending',
-        deliveryStatus: 'pending',
+        paymentStatus: 'unpaid',
+        deliveryStatus: 'not_delivered',
         createdAt: new Date().toISOString()
       };
       setOrders(prev => [newOrder, ...prev]);
@@ -228,8 +229,28 @@ export const DataProvider = ({
     }
   };
 
+  const saveSchoolOrder = async (orderedSchools: School[]) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/schools/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schools: orderedSchools.map((s, index) => ({ id: s.id, order: index })) }),
+      });
+      if (!response.ok) throw new Error('Failed to save school order');
+      
+      setSchools(orderedSchools.map((s, index) => ({ ...s, order: index })));
+      toast({ title: "School Order Saved" });
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Error", description: "Could not save school order.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
    // Product mutations
-  const addProduct = async (product: Product, readingPlanData: {schoolId: string, grade: number | string, status: 'mandatory' | 'recommended'}[]) => {
+  const addProduct = async (product: Product, readingPlanData: ReadingPlanItem[]) => {
     setLoading(true);
      try {
       console.log("Adding product...", product);
@@ -495,11 +516,11 @@ export const DataProvider = ({
       });
       if (!response.ok) throw new Error('Failed to add order');
       
-      const newOrder: Order = {
-        ...order,
-        paymentStatus: 'pending',
-        deliveryStatus: 'pending'
-      };
+     const newOrder: Order = {
+         ...order,
+         paymentStatus: 'unpaid',
+         deliveryStatus: 'not_delivered'
+       };
       setOrders(prev => [newOrder, ...prev]);
     } catch (error) {
       console.error(error);
@@ -571,14 +592,12 @@ export const DataProvider = ({
         loading,
         setLoading,
 
-        schools, setSchools, addSchool, updateSchool, deleteSchool,
+        schools, setSchools, addSchool, updateSchool, deleteSchool, saveSchoolOrder,
         products, setProducts, addProduct, updateProduct, deleteProduct,
         readingPlan, setReadingPlan,
-        categories, setCategories, addCategory, deleteCategory,
-        publishers, setPublishers, addPublisher, deletePublisher,
+        categories, setCategories, addCategory, updateCategory, deleteCategory,
+        publishers, setPublishers, addPublisher, updatePublisher, deletePublisher,
         orders, setOrders, submitOrder, addOrder, updateOrderPaymentStatus, updateOrderDeliveryStatus, deleteOrder,
-        updateCategory,
-        updatePublisher,
       }}
     >
       {children}

@@ -15,7 +15,7 @@ import type { Product } from "@/lib/types";
 import { useCart } from "@/context/cart-context";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useLanguage } from "@/context/language-context";
-import { normalizeImageUrl } from "@/lib/utils";
+import { normalizeImageUrl, getDisplayName } from "@/lib/utils";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -30,13 +30,11 @@ export default function ProductCard({ product, productBadgeRenderer }: ProductCa
   const [imageError, setImageError] = useState(false);
   const [carouselErrors, setCarouselErrors] = useState<Record<number, boolean>>({});
   
-  const displayName = typeof product.name === 'string'
-    ? product.name
-    : (typeof product.name === 'object' ? (product.name?.[language] || product.name?.pt || '') : '');
+  const displayName = getDisplayName(product.name, language);
 
   const displayDescription = typeof product.description === 'string'
     ? product.description
-    : (typeof product.description === 'object' ? (product.description?.[language] || product.description?.pt || '') : '');
+    : (typeof product.description === 'object' && product.description !== null ? (product.description?.[language] || product.description?.pt || '') : '');
 
   const displayImage = Array.isArray(product.image)
     ? normalizeImageUrl(product.image[0])
@@ -51,12 +49,12 @@ export default function ProductCard({ product, productBadgeRenderer }: ProductCa
             <CarouselContent>
               {product.image.map((img: string, index: number) => (
                  <CarouselItem key={index}>
-                    <div className="relative h-48 w-full overflow-hidden">
+                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-muted/30">
                       <Image
-                        alt={`${displayName} image ${index + 1}`}
+                        alt={`${displayName || 'Product'} image ${index + 1}`}
                         src={carouselErrors[index] ? "https://placehold.co/600x400.png" : normalizeImageUrl(img)}
                         fill
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-contain"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         onError={() => setCarouselErrors(prev => ({ ...prev, [index]: true }))}
                         data-ai-hint={product.dataAiHint}
@@ -73,10 +71,10 @@ export default function ProductCard({ product, productBadgeRenderer }: ProductCa
             )}
           </Carousel>
         ) : (
-           <div className="relative h-48 w-full overflow-hidden">
+           <div className="relative aspect-[3/4] w-full overflow-hidden bg-muted/30">
             <Image
-              alt={`${displayName || ''} image ${0 + 1}`}
-              className="object-cover w-full h-full"
+              alt={`${displayName || 'Product'} image ${0 + 1}`}
+              className="object-contain w-full h-full"
               src={imageError ? "https://placehold.co/600x400.png" : displayImage}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -104,7 +102,7 @@ export default function ProductCard({ product, productBadgeRenderer }: ProductCa
       </CardContent>
       <CardFooter className="flex items-center justify-between p-4 pt-0">
         <p className="text-sm font-semibold">
-          {product.price.toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          {(product.price || 0).toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
         </p>
         <Button onClick={() => addToCart(product)} size="sm">
           {t('common.add_to_cart')}

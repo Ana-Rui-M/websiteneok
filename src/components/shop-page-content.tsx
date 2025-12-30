@@ -9,6 +9,7 @@ import ProductGridWithBadges from "@/components/product-grid-with-badges";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ChevronRight, ShoppingCart, Search, ArrowLeft } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 
@@ -24,6 +25,7 @@ import { SidebarMenuSkeleton } from "@/components/ui/sidebar";
 interface GradeProducts {
   mandatory: Product[];
   recommended: Product[];
+  didactic_aids: Product[];
   all: Product[];
 }
 
@@ -60,6 +62,17 @@ export const ShopPageContent = ({
   const [activeTab, setActiveTab] = useState(initialTab);
   const [showIndividual, setShowIndividual] = useState<string | null>(null);
   const { addKitToCart } = useCart();
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Atualizar URL sem recarregar a página
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', value);
+    window.history.pushState(null, '', `?${params.toString()}`);
+    
+    // Rolar suavemente para o topo do conteúdo
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   
   const [bookSearchQuery, setBookSearchQuery] = useState("");
   const [selectedBookCategory, setSelectedBookCategory] = useState("all");
@@ -88,25 +101,45 @@ export const ShopPageContent = ({
   }, [products]);
 
   const schoolReadingPlan = useMemo(() => selectedSchool
-    ? readingPlan.filter((item) => item.schoolId === selectedSchool.id && item.grade !== undefined && item.grade !== null)
+    ? (readingPlan || []).filter((item) => item && item.schoolId === selectedSchool.id && item.grade !== undefined && item.grade !== null)
     : [], [selectedSchool, readingPlan]);
+
+  const sortGradeKeys = (a: string, b: string) => {
+    const getOrder = (grade: string | undefined) => {
+        if (!grade) return 999;
+        const lowerGrade = String(grade).toLowerCase();
+        if (lowerGrade === 'iniciação' || lowerGrade === 'reception') return -1;
+        
+        if (lowerGrade === '1-4' || lowerGrade === '1st-4th') return 4.5;
+        if (lowerGrade === '5-9' || lowerGrade === '5th-9th') return 9.5;
+        if (lowerGrade === '10-12' || lowerGrade === '10th-12th') return 12.5;
+        
+        if (lowerGrade === 'outros' || lowerGrade === 'others' || lowerGrade === 'didactic_aids') return 100;
+        
+        const num = parseInt(lowerGrade, 10);
+        return isNaN(num) ? 99 : num;
+    };
+    return getOrder(a) - getOrder(b);
+  };
 
   const productsByGrade = useMemo(() => {
     const grades: { [key: string]: GradeProducts } = {};
     for (const item of schoolReadingPlan) {
-      if (!item.productId) {
-        continue; // Skip if productId is undefined
+      if (!item || !item.productId) {
+        continue; // Skip if item or productId is undefined
       }
       const product = productsById[item.productId];
       if (product && product.stockStatus !== 'sold_out') {
-        const gradeKey: string = item.grade as string; // Explicitly cast to string
+        const gradeKey: string = String(item.grade || 'didactic_aids'); 
         if (!grades[gradeKey]) {
-          grades[gradeKey] = { mandatory: [], recommended: [], all: [] };
+          grades[gradeKey] = { mandatory: [], recommended: [], didactic_aids: [], all: [] };
         }
         if (item.status === 'mandatory') {
             grades[gradeKey].mandatory.push(product);
-        } else {
+        } else if (item.status === 'recommended') {
             grades[gradeKey].recommended.push(product);
+        } else {
+            grades[gradeKey].didactic_aids.push(product);
         }
         grades[gradeKey].all.push(product);
       }
@@ -116,13 +149,14 @@ export const ShopPageContent = ({
       const uniq = (arr: Product[]) => {
         const seen = new Set<string>();
         return arr.filter((p) => {
-          if (seen.has(p.id)) return false;
+          if (!p || !p.id || seen.has(p.id)) return false;
           seen.add(p.id);
           return true;
         });
       };
       grades[g].mandatory = uniq(grades[g].mandatory);
       grades[g].recommended = uniq(grades[g].recommended);
+      grades[g].didactic_aids = uniq(grades[g].didactic_aids);
       grades[g].all = uniq(grades[g].all);
     });
     return grades;
@@ -130,9 +164,7 @@ export const ShopPageContent = ({
   
   const filteredGames = useMemo(() => {
     return products.filter(p => {
-        const productName = typeof p.name === 'string'
-            ? p.name
-            : (typeof p.name === 'object' ? (p.name[language] || p.name.pt || '') : '');
+        const productName = getDisplayName(p.name, language);
         return p.type === 'game' && 
                p.stockStatus !== 'sold_out' &&
                productName.toLowerCase().includes(gameSearchQuery.toLowerCase()) &&
@@ -140,15 +172,13 @@ export const ShopPageContent = ({
     })
   }, [products, gameSearchQuery, selectedGameCategory, language]);
 
-  const bookCategories = useMemo(() => categories.filter(cat => cat.type === 'book'), [categories]);
-  const gameCategories = useMemo(() => categories.filter(cat => cat.type === 'game'), [categories]);
+  const bookCategories = useMemo(() => (categories || []).filter(cat => cat && cat.type === 'book'), [categories]);
+  const gameCategories = useMemo(() => (categories || []).filter(cat => cat && cat.type === 'game'), [categories]);
 
 
   const filteredBooks = useMemo(() => {
     return products.filter(p => {
-        const productName = typeof p.name === 'string'
-            ? p.name
-            : (typeof p.name === 'object' ? (p.name[language] || p.name.pt || '') : '');
+        const productName = getDisplayName(p.name, language);
         const productDescription = typeof p.description === 'string'
             ? p.description
             : (typeof p.description === 'object' ? (p.description[language] || p.description.pt || '') : '');
@@ -196,48 +226,23 @@ export const ShopPageContent = ({
 
   
   const calculateKitPrice = (products: Product[]) => {
-    return products.reduce((acc, product) => acc + product.price, 0);
+    return products.reduce((acc, product) => acc + (product.price || 0), 0);
   }
 
-  const customGradeSort = (a: [string, GradeProducts], b: [string, GradeProducts]) => {
-      const gradeA = a[0];
-      const gradeB = b[0];
-
-      const getOrder = (grade: string) => {
-          const lowerGrade = grade.toLowerCase();
-          if (lowerGrade === 'iniciação' || lowerGrade === 'reception') return -1;
-          
-          // New Cycle Organization
-          if (lowerGrade === '1-4' || lowerGrade === '1st-4th') return 4.5;
-          if (lowerGrade === '5-9' || lowerGrade === '5th-9th') return 9.5;
-          if (lowerGrade === '10-12' || lowerGrade === '10th-12th') return 12.5;
-          
-          if (lowerGrade === 'outros' || lowerGrade === 'others') return 100;
-          
-          const num = parseInt(grade, 10);
-          return isNaN(num) ? 99 : num;
-      };
-
-      const orderA = getOrder(gradeA);
-      const orderB = getOrder(gradeB);
-
-      return orderA - orderB;
-  };
-
   const getGradeDisplayName = (grade: string) => {
-    const lowerGrade = String(grade).toLowerCase();
-    if (lowerGrade === 'iniciação') return t('grades.reception');
-    if (lowerGrade === 'outros') return t('grades.others');
-    if (lowerGrade === '1-4') return "1ª - 4ª Classe (Outros)";
-    if (lowerGrade === '5-9') return "5ª - 9ª Classe (Outros)";
-    if (lowerGrade === '10-12') return "10ª - 12ª Classe (Outros)";
-    return `${grade}${t('grades.grade')}`;
+    const lowerGrade = grade ? String(grade).toLowerCase() : "";
+    if (lowerGrade === 'iniciação' || lowerGrade === 'reception') return t('grades.reception');
+    if (lowerGrade === 'didactic_aids') return t('shop.didactic_aids');
+    if (lowerGrade === '1-4') return "1ª - 4ª Classe (Auxiliares Didáticos)";
+    if (lowerGrade === '5-9') return "5ª - 9ª Classe (Auxiliares Didáticos)";
+    if (lowerGrade === '10-12') return "10ª - 12ª Classe (Auxiliares Didáticos)";
+    return `${grade || ''}${t('grades.grade')}`;
   };
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div className="mx-auto w-full max-w-7xl">
-        <Tabs value={activeTab} className="w-full" onValueChange={setActiveTab}>
+        <Tabs value={activeTab} className="w-full" onValueChange={handleTabChange}>
           <TabsList className="grid h-auto w-full grid-cols-1 sm:grid-cols-3">
             <TabsTrigger key="planos" value="planos" className="py-3 text-lg font-semibold text-muted-foreground data-[state=active]:bg-background/90 data-[state=active]:text-primary">{t('shop.tabs.reading_plans')}</TabsTrigger>
             <TabsTrigger key="catalogo" value="catalogo" className="py-3 text-lg font-semibold text-muted-foreground data-[state=active]:bg-background/90 data-[state=active]:text-primary">{t('shop.tabs.all_books')}</TabsTrigger>
@@ -264,13 +269,13 @@ export const ShopPageContent = ({
                   </div>
                  {Object.keys(productsByGrade).length > 0 ? (
                   <Accordion type="single" collapsible className="w-full" defaultValue={`item-${(Object.keys(productsByGrade).sort(sortGradeKeys) as string[])[0] || ''}`} onValueChange={() => setShowIndividual(null)}>
-                    {Object.entries(productsByGrade).sort(customGradeSort).map(([grade, gradeProducts]) => (
+                    {Object.entries(productsByGrade).sort((a, b) => sortGradeKeys(a[0], b[0])).map(([grade, gradeProducts]) => (
                       <AccordionItem value={`item-${grade}`} key={grade}>
                         <AccordionTrigger className="text-xl font-semibold">
                           {getGradeDisplayName(grade)}
                         </AccordionTrigger>
                         <AccordionContent>
-                           {String(grade).toLowerCase() === 'outros' || 
+                           {String(grade).toLowerCase() === 'didactic_aids' || 
                             String(grade).toLowerCase() === '1-4' || 
                             String(grade).toLowerCase() === '5-9' || 
                             String(grade).toLowerCase() === '10-12' || 
@@ -288,37 +293,41 @@ export const ShopPageContent = ({
                            ) : (
                               <div className="space-y-6">
                                   <div className="grid gap-6 lg:grid-cols-2">
-                                      {selectedSchool.hasRecommendedPlan ? (
-                                          <>
-                                              {gradeProducts.mandatory.length > 0 && (
-                                                  <div key="mandatory-kit" className="rounded-lg bg-card p-6">
-                                                      <h3 className="font-headline text-2xl font-semibold">{t('shop.mandatory_kit', { count: gradeProducts.mandatory.length })}</h3>
-                                                      <p className="mt-2 text-muted-foreground">{t('shop.buy_all_mandatory')}</p>
-                                                      <Button size="lg" className="mt-4" onClick={() => addKitToCart(gradeProducts.mandatory, t('shop.mandatory_kit_name', { grade: getGradeDisplayName(grade), school: getDisplayName(selectedSchool.name, language) }))}>
-                                                          <ShoppingCart className="mr-2 h-5 w-5" /> 
-                                                          {t('common.add_for')} {calculateKitPrice(gradeProducts.mandatory).toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                                      </Button>
-                                                  </div>
-                                              )}
-                                              {gradeProducts.recommended.length > 0 && (
-                                                  <div key="recommended-kit" className="rounded-lg border bg-card p-6">
-                                                      <h3 className="font-headline text-2xl font-semibold">{t('shop.recommended_kit', { count: gradeProducts.recommended.length })}</h3>
-                                                      <p className="mt-2 text-muted-foreground">{t('shop.buy_all_recommended')}</p>
-                                                      <Button size="lg" className="mt-4" onClick={() => addKitToCart(gradeProducts.recommended, t('shop.recommended_kit_name', { grade: getGradeDisplayName(grade), school: getDisplayName(selectedSchool.name, language) }))}>
-                                                          <ShoppingCart className="mr-2 h-5 w-5" /> 
-                                                          {t('common.add_for')} {calculateKitPrice(gradeProducts.recommended).toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                                      </Button>
-                                                  </div>
-                                              )}
-                                          </>
-                                      ) : (
-                                          gradeProducts.all.length > 0 &&
-                                          <div key="complete-kit" className="rounded-lg border bg-card p-6 lg:col-span-2">
-                                              <h3 className="font-headline text-2xl font-semibold">{t('shop.complete_kit', { grade: getGradeDisplayName(grade), count: gradeProducts.all.length })}</h3>
-                                              <p className="mt-2 text-muted-foreground">{t('shop.buy_all_for_school_year')}</p>
-                                              <Button size="lg" className="mt-4" onClick={() => addKitToCart(gradeProducts.all, t('shop.complete_kit_name', { grade: getGradeDisplayName(grade), school: getDisplayName(selectedSchool.name, language) }))}>
+                                      {/* Kit Obrigatório */}
+                                      {gradeProducts.mandatory.length > 0 && (
+                                          <div key="mandatory-kit" className="flex flex-col rounded-xl border-2 border-blue-600 bg-blue-50/30 p-6 shadow-sm transition-all hover:shadow-md">
+                                              <div className="flex items-center justify-between mb-4">
+                                                <div className="flex flex-col">
+                                                  <Badge className="w-fit mb-2 bg-blue-600 hover:bg-blue-700 text-white border-none">{t('shop.essential')}</Badge>
+                                                  <h3 className="font-headline text-2xl font-bold text-blue-900">{t('shop.mandatory_kit', { count: gradeProducts.mandatory.length })}</h3>
+                                                </div>
+                                              </div>
+                                              <p className="text-blue-800/80 mb-6 flex-grow">{t('shop.buy_all_mandatory')}</p>
+                                              <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg" onClick={() => addKitToCart(gradeProducts.mandatory, t('shop.mandatory_kit_name', { grade: getGradeDisplayName(grade), school: getDisplayName(selectedSchool.name, language) }))}>
                                                   <ShoppingCart className="mr-2 h-5 w-5" /> 
-                                                  {t('common.add_for')} {calculateKitPrice(gradeProducts.all).toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                                  {t('common.add_for')} {calculateKitPrice(gradeProducts.mandatory).toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                              </Button>
+                                          </div>
+                                      )}
+
+                                      {/* Kit Completo (Obrigatórios + Recomendados) */}
+                                      {(gradeProducts.mandatory.length > 0 || gradeProducts.recommended.length > 0) && (
+                                          <div key="complete-kit" className="flex flex-col rounded-xl border-2 border-amber-500 bg-amber-50/30 p-6 shadow-sm transition-all hover:shadow-md">
+                                              <div className="flex items-center justify-between mb-4">
+                                                <div className="flex flex-col">
+                                                  <Badge className="w-fit mb-2 bg-amber-500 hover:bg-amber-600 text-white border-none">{t('shop.most_complete')}</Badge>
+                                                  <h3 className="font-headline text-2xl font-bold text-amber-900">
+                                                    {t('shop.complete_kit', { 
+                                                      grade: getGradeDisplayName(grade), 
+                                                      count: gradeProducts.mandatory.length + gradeProducts.recommended.length 
+                                                    })}
+                                                  </h3>
+                                                </div>
+                                              </div>
+                                              <p className="text-amber-800/80 mb-6 flex-grow">{t('shop.buy_all_for_school_year')}</p>
+                                              <Button size="lg" className="w-full bg-amber-500 hover:bg-amber-600 text-white shadow-lg" onClick={() => addKitToCart([...gradeProducts.mandatory, ...gradeProducts.recommended], t('shop.complete_kit_name', { grade: getGradeDisplayName(grade), school: getDisplayName(selectedSchool.name, language) }))}>
+                                                  <ShoppingCart className="mr-2 h-5 w-5" /> 
+                                                  {t('common.add_for')} {calculateKitPrice([...gradeProducts.mandatory, ...gradeProducts.recommended]).toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                               </Button>
                                           </div>
                                       )}
@@ -332,6 +341,13 @@ export const ShopPageContent = ({
                                           </Button>
                                       </div>
                                   )}
+
+                                  {gradeProducts.didactic_aids.length > 0 && (
+                                     <div className="mt-8">
+                                       <h3 className="font-headline text-2xl font-semibold mb-4">{t('shop.didactic_aids')}</h3>
+                                       <ProductGridWithBadges products={gradeProducts.didactic_aids} grade={grade} schoolReadingPlan={schoolReadingPlan} />
+                                     </div>
+                                   )}
                               </div>
                            )}
                         </AccordionContent>

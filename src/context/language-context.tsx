@@ -20,14 +20,13 @@ const translations = { pt, en };
 export const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 // Helper function to get nested keys
-const getNestedValue = (obj: Record<string, unknown>, key: string): string | undefined => {
-  return key.split('.').reduce((o: Record<string, unknown> | undefined, i: string) => {
-    console.log('obj:', obj, 'key:', key, 'o:', o, 'i:', i);
+const getNestedValue = (obj: Record<string, unknown>, key: string): any => {
+  return key.split('.').reduce((o: any, i: string) => {
     if (o && typeof o === 'object' && i in o) {
-      return (o as Record<string, unknown>)[i] as Record<string, unknown> | undefined;
+      return o[i];
     }
     return undefined;
-  }, obj) as string | undefined;
+  }, obj);
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
@@ -48,23 +47,28 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const t = useCallback((key: string, options?: { [key: string]: string | number }) => {
     let translation = getNestedValue(translations[language], key);
 
-    if (!translation) {
+    if (translation === undefined || translation === null) {
       // Fallback to Portuguese if translation is not found
       translation = getNestedValue(translations.pt, key);
     }
 
-    if (!translation) {
+    if (translation === undefined || translation === null) {
       console.warn(`Translation for key '${key}' not found.`);
+      return key;
+    }
+
+    if (typeof translation !== 'string') {
+      console.warn(`Translation for key '${key}' is not a string. Returning key.`);
       return key;
     }
 
     if (options) {
       Object.keys(options).forEach(optKey => {
-        translation = translation!.replace(`{{${optKey}}}`, String(options[optKey]));
+        translation = (translation as string).replace(`{{${optKey}}}`, String(options[optKey]));
       });
     }
 
-    return translation;
+    return translation as string;
   }, [language]);
   
 

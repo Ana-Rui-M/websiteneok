@@ -25,7 +25,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import type { Product } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -43,7 +43,7 @@ interface AddEditGameSheetProps {
 const readingPlanItemSchema = z.object({
   schoolId: z.string().min(1, "A escola é obrigatória."),
   grade: z.union([z.coerce.number(), z.string()]).refine(val => val !== '', "O ano é obrigatório."),
-  status: z.enum(["mandatory", "recommended"]),
+  status: z.enum(["mandatory", "recommended", "didactic_aids"]),
 });
 
 
@@ -51,26 +51,24 @@ const gameBaseSchema = z.object({
   name: z.union([
     z.string().min(1, "O nome é obrigatório."),
     z.object({
-      pt: z.string().min(1, "O nome em Português é obrigatório."),
-      en: z.string().min(1, "O nome em Inglês é obrigatório."),
+      pt: z.string().optional(),
+      en: z.string().optional(),
+    }).refine(data => {
+      const ptValid = data.pt && data.pt.trim().length >= 1;
+      const enValid = data.en && data.en.trim().length >= 1;
+      return ptValid || enValid;
+    }, {
+      message: "O nome deve ter pelo menos 1 caractere em pelo menos um idioma.",
+      path: ["pt"]
     }),
-  ]).optional(),
-  description: z.preprocess((val) => {
-    if (typeof val === 'string' && val.trim() === '') return undefined;
-    if (val && typeof val === 'object') {
-      const v: any = val;
-      const pt = typeof v.pt === 'string' ? v.pt.trim() : '';
-      const en = typeof v.en === 'string' ? v.en.trim() : '';
-      if (!pt && !en) return undefined;
-    }
-    return val;
-  }, z.union([
+  ]),
+  description: z.union([
     z.string(),
     z.object({
-      pt: z.string(),
-      en: z.string(),
+      pt: z.string().optional(),
+      en: z.string().optional(),
     }),
-  ])).optional(),
+  ]).optional(),
   price: z.coerce.number().min(0, "O preço deve ser um número positivo."),
   stock: z.coerce.number().min(0, "O stock deve ser um número positivo."),
   stockStatus: z.enum(['in_stock', 'out_of_stock', 'sold_out']),
@@ -92,10 +90,15 @@ export function AddEditGameSheet({
   setIsOpen,
   game,
 }: AddEditGameSheetProps) {
-  const { schools, readingPlan, addProduct, updateProduct } = useData();
-  const { language } = useLanguage();
+  const { schools, readingPlan, addProduct, updateProduct, products } = useData();
+  const { language, t } = useLanguage();
   const [asyncError, setAsyncError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const gameReadingPlan = useMemo(() => {
+    if (!game) return [];
+    return readingPlan.filter(rp => rp.productId === game.id);
+  }, [game, readingPlan]);
 
   const form = useForm<GameFormValues>({
     resolver: zodResolver(gameBaseSchema),
@@ -127,7 +130,7 @@ export function AddEditGameSheet({
           stock: game.stock,
           stockStatus: game.stockStatus || 'in_stock',
           image: game.image || [],
-          readingPlan: readingPlan,
+          readingPlan: gameReadingPlan as any,
         });
       } else {
         form.reset({
@@ -141,11 +144,48 @@ export function AddEditGameSheet({
         });
       }
     }
-  }, [game, form, isOpen, readingPlan, language]);
+  }, [game, form, isOpen, gameReadingPlan, language]);
+
+  const mapGradeToCycle = (grade: string | number, status: string) => {
+    if (status !== 'outros' && status !== 'didactic_aids') return grade;
+    const g = String(grade).replace(/[^0-9]/g, '');
+    const n = parseInt(g);
+    if (n === 1) return '1-4';
+    if (n === 2) return '5-9';
+    if (n === 3) return '10-12';
+    return 'didactic_aids';
+  };
 
   const onSubmit = async (data: GameFormValues) => {
     setAsyncError(null);
     setIsSaving(true);
+
+    // Duplicate title check for games
+    const currentNamePt = (typeof data.name === 'object' ? data.name?.pt : data.name)?.trim().toLowerCase();
+    const currentNameEn = (typeof data.name === 'object' ? data.name?.en : data.name)?.trim().toLowerCase();
+
+    const isDuplicate = products.some(p => {
+      if (game && p.id === game.id) return false;
+      if (p.type !== 'game') return false;
+
+      const pNamePt = (typeof p.name === 'object' ? p.name?.pt : p.name)?.trim().toLowerCase();
+      const pNameEn = (typeof p.name === 'object' ? p.name?.en : p.name)?.trim().toLowerCase();
+
+      // Check if either PT or EN names match (if they are provided)
+      const ptMatch = currentNamePt && pNamePt && currentNamePt === pNamePt;
+      const enMatch = currentNameEn && pNameEn && currentNameEn === pNameEn;
+
+      return ptMatch || enMatch;
+    });
+
+    if (isDuplicate) {
+      form.setError('name' as any, { 
+        type: 'manual', 
+        message: "Já existe um jogo/item com este nome (em Português ou Inglês)." 
+      });
+      setIsSaving(false);
+      return;
+    }
 
     // Enforce image required only on create
     if (!game) {
@@ -159,21 +199,28 @@ export function AddEditGameSheet({
     }
 
     const productData: Product = {
-      id: game?.id || (typeof data.name === 'string' ? data.name : data.name?.pt || "") || "", // Ensure ID is string
+      id: game?.id || "", 
       type: "game",
-      name: data.name,
-      description: data.description,
+      name: data.name as any,
+      description: data.description as any,
       price: data.price,
       stock: data.stock,
       stockStatus: data.stockStatus,
       image: (data as any).image,
+      readingPlan: data.readingPlan?.map((rp: any) => ({
+        id: rp.id || "",
+        productId: rp.productId || "",
+        schoolId: rp.schoolId,
+        grade: mapGradeToCycle(rp.grade, rp.status),
+        status: rp.status as "mandatory" | "recommended" | "didactic_aids",
+      })) || [],
     };
-    const readingPlanData = data.readingPlan || [];
+
     try {
       if (game) {
         await updateProduct(game.id, productData);
       } else {
-        await addProduct(productData, readingPlanData);
+        await addProduct(productData, productData.readingPlan || []);
       }
       setIsOpen(false);
     } catch (err: any) {
@@ -192,9 +239,9 @@ export function AddEditGameSheet({
             className="flex h-full flex-col"
           >
             <SheetHeader>
-              <SheetTitle>{game ? "Editar Jogo" : "Adicionar Novo Jogo"}</SheetTitle>
+              <SheetTitle>{game ? t('games_page.edit_game') : t('games_page.add_new_game')}</SheetTitle>
               <SheetDescription>
-                Preencha os detalhes para o novo jogo.
+                {t('games_page.add_new_game_description')}
               </SheetDescription>
             </SheetHeader>
             {asyncError && (
@@ -208,10 +255,10 @@ export function AddEditGameSheet({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome do Jogo</FormLabel>
+                    <FormLabel>{t('games_page.name')}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Nome do Jogo"
+                        placeholder={t('games_page.name_placeholder')}
                         value={typeof field.value === 'string' ? field.value : field.value?.[language] || ''}
                         onChange={(e) => {
                           if (typeof field.value === 'string') {
@@ -231,10 +278,10 @@ export function AddEditGameSheet({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Descrição</FormLabel>
+                    <FormLabel>{t('games_page.description')}</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Descrição do Jogo"
+                        placeholder={t('games_page.description_placeholder')}
                         value={typeof field.value === 'string' ? field.value : field.value?.[language] || ''}
                         onChange={(e) => {
                           if (typeof field.value === 'string') {
@@ -254,7 +301,7 @@ export function AddEditGameSheet({
                 name="price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Preço</FormLabel>
+                    <FormLabel>{t('common.price')}</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" placeholder="0.00" {...field} />
                     </FormControl>
@@ -267,7 +314,7 @@ export function AddEditGameSheet({
                 name="stock"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Stock</FormLabel>
+                    <FormLabel>{t('common.stock')}</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="0" {...field} />
                     </FormControl>
@@ -280,7 +327,7 @@ export function AddEditGameSheet({
                 name="stockStatus"
                 render={({ field }) => (
                   <FormItem className="space-y-3">
-                    <FormLabel>Estado do Stock</FormLabel>
+                    <FormLabel>{t('common.stock_status')}</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
@@ -291,19 +338,19 @@ export function AddEditGameSheet({
                           <FormControl>
                             <RadioGroupItem value="in_stock" />
                           </FormControl>
-                          <FormLabel className="font-normal">Em Stock</FormLabel>
+                          <FormLabel className="font-normal">{t('stock_status.in_stock')}</FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-3 space-y-0">
                           <FormControl>
                             <RadioGroupItem value="out_of_stock" />
                           </FormControl>
-                          <FormLabel className="font-normal">Sem Stock</FormLabel>
+                          <FormLabel className="font-normal">{t('stock_status.out_of_stock')}</FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-3 space-y-0">
                           <FormControl>
                             <RadioGroupItem value="sold_out" />
                           </FormControl>
-                          <FormLabel className="font-normal">Esgotado</FormLabel>
+                          <FormLabel className="font-normal">{t('stock_status.sold_out')}</FormLabel>
                         </FormItem>
                       </RadioGroup>
                     </FormControl>
@@ -316,13 +363,13 @@ export function AddEditGameSheet({
                 name="image"
                 render={({ field }) => (
                   <FormItem>
-                    <ImageUpload label="Imagens" value={field.value as any} onChange={field.onChange as any} folder="products/games" multiple />
+                    <ImageUpload label={t('common.image')} value={field.value as any} onChange={field.onChange as any} folder="products/games" multiple />
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <div>
-                <h3 className="mb-4 text-lg font-medium">Plano de Leitura</h3>
+                <h3 className="mb-4 text-lg font-medium">{t('games_page.reading_plan')}</h3>
                 {readingPlanFields.map((item, index) => (
                   <div key={item.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 border rounded-md">
                     <FormField
@@ -330,11 +377,11 @@ export function AddEditGameSheet({
                       name={`readingPlan.${index}.schoolId`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Escola</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormLabel>{t('games_page.select_school')}</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecione a escola" />
+                                <SelectValue placeholder={t('games_page.select_school')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -356,9 +403,24 @@ export function AddEditGameSheet({
                       name={`readingPlan.${index}.grade`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Ano</FormLabel>
+                          <FormLabel>{t('games_page.grade')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ano (ex: 1, 2, Iniciação)" {...field} />
+                            <Input 
+                              placeholder={t('games_page.grade')} 
+                              {...field} 
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const status = form.getValues(`readingPlan.${index}.status`);
+                                if (status === 'outros' || status === 'didactic_aids') {
+                                  // Only allow 1, 2, 3 for didactic_aids
+                                  if (/^[1-3]?$/.test(val)) {
+                                    field.onChange(val);
+                                  }
+                                } else {
+                                  field.onChange(val);
+                                }
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -369,16 +431,29 @@ export function AddEditGameSheet({
                       name={`readingPlan.${index}.status`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Estado</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormLabel>{t('games_page.select_status')}</FormLabel>
+                          <Select 
+                            onValueChange={(val) => {
+                              field.onChange(val);
+                              // If switching to didactic_aids, clear or validate grade
+                              if (val === 'outros' || val === 'didactic_aids') {
+                                const currentGrade = form.getValues(`readingPlan.${index}.grade`);
+                                if (!/^[1-3]$/.test(String(currentGrade))) {
+                                  form.setValue(`readingPlan.${index}.grade`, "");
+                                }
+                              }
+                            }} 
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecione o estado" />
+                                <SelectValue placeholder={t('games_page.select_status')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="mandatory">Obrigatório</SelectItem>
-                              <SelectItem value="recommended">Recomendado</SelectItem>
+                              <SelectItem value="mandatory">{t('games_page.mandatory')}</SelectItem>
+                              <SelectItem value="recommended">{t('games_page.recommended')}</SelectItem>
+                              <SelectItem value="didactic_aids">{t('games_page.didactic_aids')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -404,18 +479,18 @@ export function AddEditGameSheet({
                   onClick={() => appendReadingPlan({ schoolId: "", grade: "", status: "mandatory" })}
                   className="w-full"
                 >
-                  <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Item ao Plano de Leitura
+                  <PlusCircle className="mr-2 h-4 w-4" /> {t('games_page.add_to_reading_plan')}
                 </Button>
               </div>
             </div>
             <SheetFooter className="flex flex-col sm:flex-row sm:justify-end gap-2 mt-4">
               <SheetClose asChild>
                 <Button type="button" variant="outline">
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
               </SheetClose>
               <Button type="submit" disabled={isSaving}>
-                {isSaving ? "A Guardar..." : "Guardar Alterações"}
+                {isSaving ? t('common.saving') : t('common.save_changes')}
               </Button>
             </SheetFooter>
           </form>

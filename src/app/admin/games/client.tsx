@@ -28,30 +28,30 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import type { Product } from "@/lib/types";
+import type { Product, School, ReadingPlanItem } from "@/lib/types";
 import { AddEditGameSheet } from "@/components/admin/add-edit-game-sheet";
 import { GameImportSheet } from "@/components/admin/game-import-sheet";
 import { Input } from "@/components/ui/input";
 import { useData } from "@/context/data-context";
 import { useLanguage } from "@/context/language-context";
 import { DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
-import type { School } from "@/lib/types";
 import { getDisplayName } from "@/lib/utils";
 
 interface GamesPageClientProps {
     initialProducts: Product[];
     initialSchools: School[];
+    initialReadingPlan: ReadingPlanItem[];
 }
 
-export default function GamesPageClient({ initialProducts, initialSchools }: GamesPageClientProps) {
-  const { products, setProducts, deleteProduct, schools, setSchools } = useData();
+export default function GamesPageClient({ initialProducts, initialSchools, initialReadingPlan }: GamesPageClientProps) {
+  const { products, setProducts, deleteProduct, schools, setSchools, readingPlan, setReadingPlan } = useData();
   const { t, language } = useLanguage();
 
   useEffect(() => {
     setProducts(initialProducts);
     setSchools(initialSchools);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialProducts, initialSchools]);
+    setReadingPlan(initialReadingPlan);
+  }, [initialProducts, initialSchools, initialReadingPlan, setProducts, setSchools, setReadingPlan]);
 
 
   const [isSheetOpen, setSheetOpen] = useState(false);
@@ -76,16 +76,18 @@ export default function GamesPageClient({ initialProducts, initialSchools }: Gam
   // }
 
   const filteredProducts = useMemo(() => {
-    return gameProducts.filter((product) => {
+    return (gameProducts || []).filter((product) => {
+      if (!product) return false;
       const name = getDisplayName(product.name, language) || '';
-      const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = name.toLowerCase().includes((searchQuery || '').toLowerCase());
       const matchesStock = showSoldOut || product.stockStatus !== 'sold_out';
 
-      const matchesSchool = schoolFilter === "all" || product.readingPlan?.some(rp => rp.schoolId === schoolFilter);
+      const productReadingPlan = (readingPlan || []).filter(rp => rp && rp.productId === product.id);
+      const matchesSchool = schoolFilter === "all" || (productReadingPlan && productReadingPlan.some(rp => rp && rp.schoolId === schoolFilter));
 
       return matchesSearch && matchesStock && matchesSchool;
     });
-  }, [gameProducts, searchQuery, showSoldOut, language, schoolFilter]);
+  }, [gameProducts, searchQuery, showSoldOut, language, schoolFilter, readingPlan]);
 
   const handleAddGame = () => {
     setSelectedGame(undefined);
@@ -144,11 +146,11 @@ export default function GamesPageClient({ initialProducts, initialSchools }: Gam
                   <DropdownMenuRadioItem value="all">
                     {t('common.all_schools')}
                   </DropdownMenuRadioItem>
-                  {schools.map((school) => (
-                    <DropdownMenuRadioItem key={school.id} value={school.id}>
-                      {typeof school.name === 'object' && school.name !== null
+                  {(schools || []).map((school) => (
+                    <DropdownMenuRadioItem key={school?.id} value={school?.id}>
+                      {school && typeof school.name === 'object' && school.name !== null
                         ? ((school.name as Record<string, string>)[language] ?? (school.name as Record<string, string>).pt ?? "")
-                        : (typeof school.name === 'string' ? school.name : "")}
+                        : (school && typeof school.name === 'string' ? school.name : "")}
                     </DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuRadioGroup>
@@ -185,11 +187,11 @@ export default function GamesPageClient({ initialProducts, initialSchools }: Gam
                 <TableRow key={product.id}>
                   <TableCell className="hidden sm:table-cell">
                     <Image
-                      alt={getDisplayName(product.name, language)}
-                      className="aspect-square rounded-md object-cover"
+                      alt={product ? getDisplayName(product.name, language) : "Product"}
+                      className="aspect-[3/4] rounded-md object-contain bg-muted/30"
                       height="64"
-                      src={Array.isArray(product.image) ? product.image[0] : (product.image || "https://placehold.co/64x64.png")}
-                      width="64"
+                      src={product && Array.isArray(product.image) && product.image.length > 0 ? product.image[0] : (product && typeof product.image === 'string' ? product.image : "https://placehold.co/64x64.png")}
+                      width="48"
                     />
                   </TableCell>
                   <TableCell className="font-medium">{getDisplayName(product.name, language)}</TableCell>
@@ -201,10 +203,10 @@ export default function GamesPageClient({ initialProducts, initialSchools }: Gam
                       </Badge>
                    </TableCell>
                    <TableCell>
-                    {product.stock}
+                    {product.stock ?? 0}
                    </TableCell>
                   <TableCell>
-                    {product.price.toLocaleString("pt-PT", {
+                    {(product.price || 0).toLocaleString("pt-PT", {
                       style: "currency",
                       currency: "AOA",
                       minimumFractionDigits: 0,

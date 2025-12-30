@@ -33,13 +33,13 @@ export default function CartItem({ item, isKitItem = false }: CartItemProps) {
 
   return (
     <div className="flex items-start gap-4">
-      <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border">
+      <div className="relative h-24 w-[72px] flex-shrink-0 overflow-hidden rounded-md border bg-muted/30">
         <Image
           src={imageError ? "https://placehold.co/600x400.png" : displayImage}
           alt={getDisplayName(item.name, language)}
           fill
-          className="object-cover w-full h-full"
-          sizes="96px"
+          className="object-contain w-full h-full"
+          sizes="72px"
           data-ai-hint={item.dataAiHint}
           onError={() => setImageError(true)}
         />
@@ -47,9 +47,9 @@ export default function CartItem({ item, isKitItem = false }: CartItemProps) {
       <div className="flex flex-1 flex-col gap-1">
         <div className="flex justify-between">
           <h3 className="font-semibold">{getDisplayName(item.name, language)}</h3>
-          <p className="font-semibold">{(item.price * item.quantity).toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+          <p className="font-semibold">{((item?.price || 0) * (item?.quantity || 0)).toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
         </div>
-        <p className="text-sm text-muted-foreground">{item.price.toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })} {t('cart.each')}</p>
+        <p className="text-sm text-muted-foreground">{(item?.price || 0).toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })} {t('cart.each')}</p>
         <div className="mt-2 flex items-center justify-between">
             {isKitItem ? (
                  <div className="flex items-center gap-2">

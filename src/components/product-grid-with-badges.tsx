@@ -28,14 +28,23 @@ const ProductGridWithBadges: React.FC<ProductGridWithBadgesProps> = ({
       productBadgeRenderer={(product: Product) => {
         const planItem = gradePlan.find((gp) => gp.productId === product.id);
         if (planItem) {
+          let badgeLabel = t("shop.recommended");
+          let badgeVariant: "default" | "secondary" | "outline" = "secondary";
+
+          if (planItem.status === "mandatory") {
+            badgeLabel = t("shop.mandatory");
+            badgeVariant = "default";
+          } else if (planItem.status === "didactic_aids") {
+            badgeLabel = t("shop.didactic_aids");
+            badgeVariant = "outline";
+          }
+
           return (
             <Badge
-              variant={planItem.status === "mandatory" ? "default" : "secondary"}
+              variant={badgeVariant}
               className="capitalize"
             >
-              {planItem.status === "mandatory"
-                ? t("shop.mandatory")
-                : t("shop.recommended")}
+              {badgeLabel}
             </Badge>
           );
         }

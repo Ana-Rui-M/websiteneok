@@ -1,25 +1,27 @@
 
 import { requireAdmin } from "@/lib/require-admin";
 import GamesPageClient from "./client";
-import { getCachedProducts, getCachedSchools } from "@/lib/admin-cache";
+import { getCachedProducts, getCachedSchools, getCachedReadingPlan } from "@/lib/admin-cache";
 
 async function getGamesData() {
-    const [products, schools] = await Promise.all([
+    const [products, schools, readingPlan] = await Promise.all([
         getCachedProducts(),
-        getCachedSchools()
+        getCachedSchools(),
+        getCachedReadingPlan()
     ]);
 
-    return { products, schools };
+    return { products, schools, readingPlan };
 }
 
 export default async function GamesPage() {
   await requireAdmin();
-  const { products, schools } = await getGamesData();
+  const { products, schools, readingPlan } = await getGamesData();
   
   return (
     <GamesPageClient 
         initialProducts={products} 
         initialSchools={schools}
+        initialReadingPlan={readingPlan}
     />
   )
 }

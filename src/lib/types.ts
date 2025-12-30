@@ -21,7 +21,7 @@ export const ProductSchema = z.object({
   publisher: z.string().optional(),
   author: z.string().optional(),
   stockStatus: z.enum(['in_stock', 'out_of_stock', 'sold_out']).optional(),
-  status: z.enum(["mandatory", "recommended"]).optional(),
+  status: z.enum(["mandatory", "recommended", "didactic_aids"]).optional(),
 });
 
 export const ReadingPlanItemSchema = z.object({
@@ -29,7 +29,7 @@ export const ReadingPlanItemSchema = z.object({
   productId: z.string().optional(),
   schoolId: z.string(),
   grade: z.union([z.number(), z.string()]),
-  status: z.enum(["mandatory", "recommended"]),
+  status: z.enum(["mandatory", "recommended", "didactic_aids"]),
 });
 
 export interface ReadingPlanItem {
@@ -37,7 +37,7 @@ export interface ReadingPlanItem {
   productId?: string;
   schoolId: string;
   grade: string | number;
-  status: "mandatory" | "recommended";
+  status: "mandatory" | "recommended" | "didactic_aids";
 }
 
 export interface School {
@@ -54,6 +54,7 @@ export interface School {
   allowPickup?: boolean;
   allowPickupAtLocation?: boolean;
   hasRecommendedPlan?: boolean;
+  order?: number;
 }
 
 
@@ -76,7 +77,7 @@ export interface Product {
   publisher?: string;
   author?: string;
   stockStatus?: 'in_stock' | 'out_of_stock' | 'sold_out';
-  status?: "mandatory" | "recommended";
+  status?: "mandatory" | "recommended" | "didactic_aids";
   readingPlan?: ReadingPlanItem[];
 }
 
@@ -90,8 +91,10 @@ export type PaymentStatus = 'paid' | 'unpaid' | 'partially_paid' | 'cancelled' |
 export type DeliveryStatus = 'delivered' | 'not_delivered' | 'school_pickup' | 'out_of_stock' | 'cancelled';
 
 export interface Order {
+  id?: string;
   reference: string;
   date: string;
+  createdAt?: string;
   studentName?: string;
   studentClass?: string;
   guardianName: string;
@@ -107,6 +110,7 @@ export interface Order {
   deliveryStatus: DeliveryStatus;
   schoolId?: string;
   schoolName?: string;
+  paymentProof?: string;
 }
 
 export interface Category {

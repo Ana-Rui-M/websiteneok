@@ -166,6 +166,7 @@ export default function CheckoutForm() {
         schoolName: schoolName ?? undefined,
         studentName: isSchoolOrder ? data.studentName : undefined,
         studentClass: (isSchoolOrder && data.deliveryOption === "levantamento") ? (data.classAndGrade ?? undefined) : undefined,
+        language, // Add language to order
       });
 
       clearCart();
@@ -338,10 +339,10 @@ export default function CheckoutForm() {
         </div>
 
 
-        <div className="mt-6">
-          <p className="text-lg font-bold">{t("checkout_form.cart_total")}: {cartTotal.toFixed(2)} Kz</p>
-          <p className="text-lg font-bold">{t("checkout_form.delivery_fee")}: {deliveryFee.toFixed(2)} Kz</p>
-          <p className="text-xl font-bold">{t("checkout_form.total")}: {(cartTotal + deliveryFee).toFixed(2)} Kz</p>
+        <div className="mt-6 space-y-1 text-right">
+          <p className="text-muted-foreground">{t("checkout_form.cart_total")}: {cartTotal.toLocaleString('pt-PT', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Kz</p>
+          <p className="text-muted-foreground">{t("checkout_form.delivery_fee")}: {deliveryFee.toLocaleString('pt-PT', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Kz</p>
+          <p className="text-2xl font-bold text-primary">{t("checkout_form.total")}: {finalTotal.toLocaleString('pt-PT', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Kz</p>
         </div>
 
         <Button type="submit" size="lg" className="w-full">

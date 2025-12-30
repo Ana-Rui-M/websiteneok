@@ -55,8 +55,7 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
     setReadingPlan(initialReadingPlan);
     setSchools(initialSchools);
     setPublishers(initialPublishers);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialProducts, initialReadingPlan, initialSchools, initialPublishers]);
+  }, [initialProducts, initialReadingPlan, initialSchools, initialPublishers, setProducts, setReadingPlan, setSchools, setPublishers]);
 
   const [isSheetOpen, setSheetOpen] = useState(false);
   const [isImportSheetOpen, setImportSheetOpen] = useState(false);
@@ -75,7 +74,7 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
   }
 
   const getBookReadingPlan = useCallback((productId: string) => {
-    return readingPlan.filter((item: ReadingPlanItem) => item.productId === productId);
+    return (readingPlan || []).filter((item: ReadingPlanItem) => item && item.productId === productId);
   }, [readingPlan]);
 
   const filteredProducts = useMemo(() => {
@@ -84,7 +83,7 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
       const matchesSearch = nameText.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStock = stockFilter === 'all' || product.stockStatus === stockFilter;
       const matchesPublisher = publisherFilter === 'all' || product.publisher === publisherFilter;
-      const matchesSchool = schoolFilter === 'all' || getBookReadingPlan(product.id).some((item: ReadingPlanItem) => item.schoolId === schoolFilter);
+      const matchesSchool = schoolFilter === 'all' || getBookReadingPlan(product.id).some((item: ReadingPlanItem) => item && item.schoolId === schoolFilter);
       return matchesSearch && matchesStock && matchesPublisher && matchesSchool;
     });
   }, [bookProducts, searchQuery, stockFilter, publisherFilter, schoolFilter, getBookReadingPlan]); // Removed language from dependency array
@@ -104,7 +103,7 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
   };
 
   const getSchoolAbbreviation = (schoolId: string) => {
-    return schools.find(s => s.id === schoolId)?.abbreviation || schoolId;
+    return (schools || []).find(s => s && s.id === schoolId)?.abbreviation || schoolId;
   }
   
   const getStatusLabel = (status: Product['stockStatus']) => {
@@ -149,7 +148,7 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
                      <DropdownMenuLabel>{t('books_page.filter_by_publisher')}</DropdownMenuLabel>
                      <DropdownMenuRadioGroup value={publisherFilter} onValueChange={setPublisherFilter}>
                         <DropdownMenuRadioItem value="all">{t('common.all_publishers')}</DropdownMenuRadioItem>
-                        {publishers.map(publisher => (
+                        {(publishers || []).map(publisher => (
                             <DropdownMenuRadioItem key={publisher} value={publisher}>{publisher}</DropdownMenuRadioItem>
                         ))}
                     </DropdownMenuRadioGroup>
@@ -157,7 +156,7 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
                     <DropdownMenuLabel>{t('books_page.filter_by_school')}</DropdownMenuLabel>
                     <DropdownMenuRadioGroup value={schoolFilter} onValueChange={setSchoolFilter}>
                         <DropdownMenuRadioItem value="all">{t('common.all_schools')}</DropdownMenuRadioItem>
-                        {schools.map(school => (
+                        {(schools || []).map(school => (
                             <DropdownMenuRadioItem key={school.id} value={school.id}>{getDisplayName(school.name, language)}</DropdownMenuRadioItem>
                         ))}
                     </DropdownMenuRadioGroup>
@@ -197,10 +196,10 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
                   <TableCell className="hidden sm:table-cell">
                     <img 
                       alt={getDisplayName(product.name, language)}
-                      className="aspect-square rounded-md object-cover"
+                      className="aspect-[3/4] rounded-md object-contain bg-muted/30"
                       height={64}
-                      src={Array.isArray(product.image) ? product.image[0] : (product.image || 'https://placehold.co/64x64.png')}
-                      width={64}
+                      src={Array.isArray(product.image) ? (product.image[0] || 'https://placehold.co/64x64.png') : (product.image || 'https://placehold.co/64x64.png')}
+                      width={48}
                     />
                   </TableCell>
                   <TableCell className="font-medium">{getDisplayName(product.name, language)}</TableCell>
@@ -213,9 +212,9 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
                       </Badge>
                    </TableCell>
                    <TableCell>
-                    {product.stock}
+                    {product.stock || 0}
                    </TableCell>
-                  <TableCell>{product.price.toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
+                  <TableCell>{(product.price || 0).toLocaleString('pt-PT', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
                   <TableCell className="hidden md:table-cell">
                     <div className="flex flex-wrap gap-1">
                       {getBookReadingPlan(product.id).length > 0 ? (
