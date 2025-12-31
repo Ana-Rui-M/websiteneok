@@ -115,6 +115,7 @@ export const pt = {
     status: 'Estado',
     reading_plan: 'Plano de Leitura',
     are_you_sure: 'Tem a certeza?',
+    delete_warning: 'Este item tem uma imagem. Eliminá-lo também removerá a imagem do armazenamento. Esta ação não pode ser desfeita.',
     action_cannot_be_undone_category: 'Esta ação não pode ser desfeita. Isto irá eliminar permanentemente a categoria.',
     action_cannot_be_undone_publisher: 'Esta ação não pode ser desfeita. Isto irá eliminar permanentemente a editora.',
     action_cannot_be_undone_school: 'Esta ação não pode ser desfeita. Isto irá eliminar permanentemente a escola e todos os seus dados.',

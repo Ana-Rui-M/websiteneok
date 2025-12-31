@@ -113,6 +113,7 @@ export const en = {
     status: 'Status',
     reading_plan: 'Reading Plan',
     are_you_sure: 'Are you sure?',
+    delete_warning: 'This item has an image. Deleting it will also remove the image from storage. This action cannot be undone.',
     action_cannot_be_undone_category: 'This action cannot be undone. This will permanently delete the category.',
     action_cannot_be_undone_publisher: 'This action cannot be undone. This will permanently delete the publisher.',
     action_cannot_be_undone_school: 'This action cannot be undone. This will permanently delete the school and all its data.',

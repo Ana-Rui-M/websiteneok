@@ -36,8 +36,19 @@ import { Input } from "@/components/ui/input";
 import { useData } from "@/context/data-context";
 import { useLanguage } from "@/context/language-context";
 
-import { getDisplayName } from "@/lib/utils";
+import { getDisplayName, normalizeSearch } from "@/lib/utils";
 import { ProductImportSheet } from "@/components/admin/product-import-sheet";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface BooksPageClientProps {
     initialProducts: Product[];
@@ -66,6 +77,8 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
   const [stockFilter, setStockFilter] = useState("all");
   const [publisherFilter, setPublisherFilter] = useState("all");
   const [schoolFilter, setSchoolFilter] = useState("all");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState<Product | null>(null);
 
   const bookProducts = useMemo(() => products.filter(p => p.type === 'book' || !p.type), [products]);
 
@@ -99,7 +112,22 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
   };
 
   const handleDeleteBook = (book: Product) => {
-    deleteProduct(book.id);
+    const images = Array.isArray(book.image) ? book.image : (book.image ? [book.image] : []);
+    if (images.length > 0) {
+      setBookToDelete(book);
+      setDeleteConfirmOpen(true);
+    } else {
+      deleteProduct(book.id);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (bookToDelete) {
+      const imageUrl = Array.isArray(bookToDelete.image) ? bookToDelete.image[0] : bookToDelete.image;
+      deleteProduct(bookToDelete.id, imageUrl);
+      setBookToDelete(null);
+      setDeleteConfirmOpen(false);
+    }
   };
 
   const getSchoolAbbreviation = (schoolId: string) => {
@@ -290,6 +318,22 @@ export default function BooksPageClient({ initialProducts, initialReadingPlan, i
           setImportSheetOpen(false);
         }}
       />
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('common.are_you_sure')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('books_page.delete_warning')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -35,7 +35,17 @@ import { Input } from "@/components/ui/input";
 import { useData } from "@/context/data-context";
 import { useLanguage } from "@/context/language-context";
 import { DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
-import { getDisplayName } from "@/lib/utils";
+import { getDisplayName, normalizeSearch } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface GamesPageClientProps {
     initialProducts: Product[];
@@ -62,32 +72,10 @@ export default function GamesPageClient({ initialProducts, initialSchools, initi
   const [searchQuery, setSearchQuery] = useState("");
   const [showSoldOut, setShowSoldOut] = useState(false);
   const [schoolFilter, setSchoolFilter] = useState("all");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [gameToDelete, setGameToDelete] = useState<Product | null>(null);
 
   const gameProducts = useMemo(() => products.filter(p => p.type === 'game'), [products]);
-
-  // const getProductName = (product: Product) => {
-  //   if (!product || !product.name) return '';
-  //   if (typeof product.name === 'string') {
-  //     return product.name;
-  //   } else if (typeof product.name === 'object' && product.name !== null) {
-  //     return product.name[language] || product.name.pt || '';
-  //   }
-  //   return '';
-  // }
-
-  const filteredProducts = useMemo(() => {
-    return (gameProducts || []).filter((product) => {
-      if (!product) return false;
-      const name = getDisplayName(product.name, language) || '';
-      const matchesSearch = normalizeSearch(name).includes(normalizeSearch(searchQuery || ''));
-      const matchesStock = showSoldOut || product.stockStatus !== 'sold_out';
-
-      const productReadingPlan = (readingPlan || []).filter(rp => rp && rp.productId === product.id);
-      const matchesSchool = schoolFilter === "all" || (productReadingPlan && productReadingPlan.some(rp => rp && rp.schoolId === schoolFilter));
-
-      return matchesSearch && matchesStock && matchesSchool;
-    });
-  }, [gameProducts, searchQuery, showSoldOut, language, schoolFilter, readingPlan]);
 
   const handleAddGame = () => {
     setSelectedGame(undefined);
@@ -99,8 +87,23 @@ export default function GamesPageClient({ initialProducts, initialSchools, initi
     setSheetOpen(true);
   };
 
-  const handleDeleteGame = (gameId: string) => {
-    deleteProduct(gameId);
+  const handleDeleteGame = (game: Product) => {
+    const images = Array.isArray(game.image) ? game.image : (game.image ? [game.image] : []);
+    if (images.length > 0) {
+      setGameToDelete(game);
+      setDeleteConfirmOpen(true);
+    } else {
+      deleteProduct(game.id);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (gameToDelete) {
+      const imageUrl = Array.isArray(gameToDelete.image) ? gameToDelete.image[0] : gameToDelete.image;
+      deleteProduct(gameToDelete.id, imageUrl);
+      setGameToDelete(null);
+      setDeleteConfirmOpen(false);
+    }
   };
 
   const getStatusLabel = (status: Product['stockStatus']) => {
@@ -109,6 +112,31 @@ export default function GamesPageClient({ initialProducts, initialSchools, initi
     if (status === 'out_of_stock') return t('stock_status.out_of_stock');
     return '';
   }
+
+  const filteredProducts = useMemo(() => {
+    let result = gameProducts;
+
+    if (searchQuery) {
+      const normalizedQuery = normalizeSearch(searchQuery);
+      result = result.filter(product => {
+        const name = getDisplayName(product.name, language);
+        return normalizeSearch(name).includes(normalizedQuery);
+      });
+    }
+
+    if (!showSoldOut) {
+      result = result.filter(product => product.stockStatus !== 'sold_out');
+    }
+
+    if (schoolFilter !== "all") {
+      result = result.filter(product => {
+        const rp = readingPlan.filter(item => item.productId === product.id);
+        return rp.some(item => item.schoolId === schoolFilter);
+      });
+    }
+
+    return result;
+  }, [gameProducts, searchQuery, language, showSoldOut, schoolFilter, readingPlan]);
 
   return (
     <>
@@ -237,7 +265,7 @@ export default function GamesPageClient({ initialProducts, initialSchools, initi
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive"
-                          onClick={() => handleDeleteGame(product.id)}
+                          onClick={() => handleDeleteGame(product)}
                         >
                           {t('common.delete')}
                         </DropdownMenuItem>
@@ -259,6 +287,22 @@ export default function GamesPageClient({ initialProducts, initialSchools, initi
         isOpen={isImportSheetOpen}
         setIsOpen={setImportSheetOpen}
       />
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('common.are_you_sure')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('games_page.delete_warning')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -22,15 +22,16 @@ export function normalizeImageUrl(image?: string): string {
   const fallback = 'https://placehold.co/600x400.png';
   if (!image || typeof image !== 'string') return fallback;
 
+  const trimmedImage = image.trim();
+  if (!trimmedImage) return fallback;
+
   // Web URL: sanitize Firebase Storage URLs that may be malformed
-  if (image.startsWith('http://') || image.startsWith('https://')) {
+  if (trimmedImage.startsWith('http://') || trimmedImage.startsWith('https://')) {
     // If it's a Firebase Storage URL, fix common issues:
-    // - Duplicate or noisy query params (ensure only alt=media and token)
-    if (/^https?:\/\/firebasestorage\.googleapis\.com\//.test(image)) {
-      // Reconstruct query params safely
-      const qIndex = image.indexOf('?');
-      const base = qIndex >= 0 ? image.slice(0, qIndex) : image;
-      const rest = qIndex >= 0 ? image.slice(qIndex + 1).split('?')[0] : '';
+    if (/^https?:\/\/firebasestorage\.googleapis\.com\//.test(trimmedImage)) {
+      const qIndex = trimmedImage.indexOf('?');
+      const base = qIndex >= 0 ? trimmedImage.slice(0, qIndex) : trimmedImage;
+      const rest = qIndex >= 0 ? trimmedImage.slice(qIndex + 1).split('?')[0] : '';
 
       const params = new URLSearchParams(rest);
       const token = params.get('token') || '';
@@ -43,14 +44,12 @@ export function normalizeImageUrl(image?: string): string {
       }
       return `${base}?${finalQuery}`;
     }
-
-    // Non-Firebase http(s) URL
-    return image;
+    return trimmedImage;
   }
 
   // Convert Firebase Storage gs:// URLs to public https URLs
-  if (image.startsWith('gs://')) {
-    const match = image.match(/^gs:\/\/([^\/]+)\/(.+)$/);
+  if (trimmedImage.startsWith('gs://')) {
+    const match = trimmedImage.match(/^gs:\/\/([^\/]+)\/(.+)$/);
     if (match) {
       const bucket = match[1];
       const path = match[2];
@@ -60,7 +59,14 @@ export function normalizeImageUrl(image?: string): string {
     return fallback;
   }
 
-  // If it's an unrecognized format (e.g., relative path), fall back
+  // Handle relative paths (e.g., products/games/image.jpg)
+  if (trimmedImage.includes('/')) {
+    // Try both common Firebase buckets if it's a relative path
+    const bucket = 'biblioangola.firebasestorage.app'; 
+    const encodedPath = encodeURIComponent(trimmedImage.replace(/\\/g, '/'));
+    return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodedPath}?alt=media`;
+  }
+
   return fallback;
 }
 

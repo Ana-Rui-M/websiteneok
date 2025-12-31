@@ -403,13 +403,13 @@ export const ShopPageContent = ({
                 <Input
                   type="search"
                   placeholder={t('shop.search_books_placeholder')}
-                  className="w-full rounded-lg bg-background pl-8"
+                  className="w-full rounded-lg border-primary/20 bg-background pl-8"
                   value={bookSearchQuery}
                   onChange={(e) => setBookSearchQuery(e.target.value)}
                 />
               </div>
               <Select value={selectedBookCategory} onValueChange={setSelectedBookCategory}>
-                <SelectTrigger className="w-[180px] bg-background">
+                <SelectTrigger className="w-[180px] rounded-lg border-primary/20">
                   <SelectValue placeholder={t('shop.all_categories')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -442,14 +442,14 @@ export const ShopPageContent = ({
                 <Input
                   type="search"
                   placeholder={t('shop.search_games_placeholder')}
-                  className="w-full rounded-lg bg-background pl-8"
+                  className="w-full rounded-lg border-primary/20 bg-background pl-8"
                   value={gameSearchQuery}
                   onChange={(e) => setGameSearchQuery(e.target.value)}
                 />
               </div>
               <div className="flex items-center gap-2">
                 <Select value={selectedGameCategory} onValueChange={setSelectedGameCategory}>
-                  <SelectTrigger className="w-[180px] bg-background">
+                  <SelectTrigger className="w-[180px] rounded-lg border-primary/20">
                     <SelectValue placeholder={t('shop.all_categories')} />
                   </SelectTrigger>
                   <SelectContent>
