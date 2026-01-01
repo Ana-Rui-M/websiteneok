@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CartItem, Product, ReadingPlanItem, School } from "@/lib/types";
-import { getDisplayName } from "@/lib/utils";
+import { getDisplayName, cn } from "@/lib/utils";
 import {
   Form,
   FormControl,
@@ -47,7 +47,7 @@ export default function CheckoutForm() {
   const { toast } = useToast();
   const { t } = useLanguage();
   const { cartItems, cartTotal, clearCart } = useCart();
-  const { readingPlan, schools, submitOrder } = useData();
+  const { readingPlan, schools, submitOrder, loading } = useData();
   const { language } = useLanguage();
 
   const readingPlanProductIds = useMemo(() => {
@@ -114,6 +114,13 @@ export default function CheckoutForm() {
   });
 
   const deliveryOption = form.watch("deliveryOption");
+  const paymentMethod = form.watch("paymentMethod");
+
+  useEffect(() => {
+    if ((deliveryOption === "delivery" || deliveryOption === "pickup") && paymentMethod === "multicaixa") {
+      form.setValue("paymentMethod", "transferencia");
+    }
+  }, [deliveryOption, paymentMethod, form]);
 
   const getDeliveryFee = () => {
     switch (deliveryOption) {
@@ -170,16 +177,16 @@ export default function CheckoutForm() {
       });
 
       clearCart();
-      const urlParams = new URLSearchParams();
-      urlParams.set("ref", orderReference);
-      urlParams.set("payment", data.paymentMethod);
-      router.push(`/order-confirmation?${urlParams.toString()}`);
-
-
+      
       toast({
         title: t("checkout_form.toast.order_submitted_title"),
         description: t("checkout_form.toast.order_submitted_description")
       });
+
+      const urlParams = new URLSearchParams();
+      urlParams.set("ref", orderReference);
+      urlParams.set("payment", data.paymentMethod);
+      router.push(`/order-confirmation?${urlParams.toString()}`);
 
     } catch (error) {
       console.error("Failed to submit order:", error);
@@ -327,8 +334,18 @@ export default function CheckoutForm() {
                       <FormLabel className="font-normal">{t("checkout_form.payment_method_numerario")}</FormLabel>
                     </FormItem>
                     <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl><RadioGroupItem value="multicaixa" /></FormControl>
-                      <FormLabel className="font-normal">{t("checkout_form.payment_method_multicaixa")}</FormLabel>
+                      <FormControl>
+                        <RadioGroupItem 
+                          value="multicaixa" 
+                          disabled={deliveryOption === "delivery" || deliveryOption === "pickup"}
+                        />
+                      </FormControl>
+                      <FormLabel className={cn(
+                        "font-normal",
+                        (deliveryOption === "delivery" || deliveryOption === "pickup") && "text-muted-foreground line-through"
+                      )}>
+                        {t("checkout_form.payment_method_multicaixa")}
+                      </FormLabel>
                     </FormItem>
                   </RadioGroup>
                 </FormControl>
@@ -345,8 +362,15 @@ export default function CheckoutForm() {
           <p className="text-2xl font-bold text-primary">{t("checkout_form.total")}: {finalTotal.toLocaleString('pt-PT', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Kz</p>
         </div>
 
-        <Button type="submit" size="lg" className="w-full">
-          {t("checkout_form.submit_button")} {finalTotal.toLocaleString("pt-PT", { style: "currency", currency: "AOA", minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+        <Button type="submit" size="lg" className="w-full" disabled={loading}>
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              {t("common.loading") || "Processando..."}
+            </span>
+          ) : (
+            `${t("checkout_form.submit_button")} ${finalTotal.toLocaleString("pt-PT", { style: "currency", currency: "AOA", minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+          )}
         </Button>
       </form>
     </Form>

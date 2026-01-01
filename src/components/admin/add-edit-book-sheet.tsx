@@ -86,7 +86,7 @@ const bookBaseSchema = z.object({
 const bookCreateSchema = bookBaseSchema.extend({
   image: z.union([
     z.string().min(1, "A imagem é obrigatória."),
-    z.array(z.string()).min(1, "A imagem é obrigatória."),
+    z.array(z.string()).min(1, "A imagem é obrigatória.").max(3, "Pode carregar no máximo 3 imagens."),
   ]),
 });
 
@@ -118,7 +118,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
       publisher: "",
       author: "",
       stockStatus: 'in_stock',
-      image: "",
+      image: [],
       readingPlan: [],
     },
   });
@@ -281,7 +281,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
       publisher: data.publisher,
       author: data.author,
       stockStatus: data.stockStatus,
-      image: data.image,
+      image: (data as any).image,
       readingPlan: data.readingPlan?.map((rp: any) => ({
         id: rp.id || "",
         productId: rp.productId || "",
@@ -509,7 +509,7 @@ export const AddEditBookSheet: React.FC<AddEditBookSheetProps> = ({ book, isOpen
               name="image"
               render={({ field }) => (
                 <FormItem>
-                  <ImageUpload label="Imagem" value={field.value} onChange={field.onChange} folder="products/books" multiple={false} />
+                  <ImageUpload label="Imagem" value={field.value as any} onChange={field.onChange as any} folder="products/books" multiple max={3} />
                   <FormMessage />
                 </FormItem>
               )}

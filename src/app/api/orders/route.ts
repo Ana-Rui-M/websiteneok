@@ -22,32 +22,69 @@ export async function POST(request: NextRequest) {
     // Add document to 'mail' collection to trigger 'Trigger Email from Firestore' extension
     try {
       console.log("[API Orders] POST - Triggering email via 'mail' collection");
-      await firestore.collection('mail').add({
-        to: order.email,
+      
+      const isPT = order.language === 'pt';
+      
+      const emailContent = {
+        to: `${order.guardianName} <${order.email}>`,
+        bcc: 'neokudilonga@gmail.com', // Send a blind copy to admin
         message: {
-          subject: `Confirmação de Encomenda - ${order.reference}`,
+          subject: isPT ? `Confirmação de Encomenda - ${order.reference}` : `Order Confirmation - ${order.reference}`,
+          text: `Olá ${order.guardianName}, recebemos o seu pedido ${order.reference}. Total: ${order.total.toLocaleString('pt-PT', { style: 'currency', currency: 'AOA' })}.`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-              <h2 style="color: #184f3f; text-align: center;">Obrigado pela sua encomenda!</h2>
-              <p>Olá <strong>${order.guardianName}</strong>,</p>
-              <p>Recebemos o seu pedido com sucesso. Abaixo estão os detalhes da sua encomenda:</p>
+              <h2 style="color: #184f3f; text-align: center;">${isPT ? 'Obrigado pela sua encomenda!' : 'Thank you for your order!'}</h2>
+              <p>${isPT ? 'Olá' : 'Hello'} <strong>${order.guardianName}</strong>,</p>
+              <p>${isPT 
+                ? `A sua encomenda com a referência <strong>${order.reference}</strong> foi registada com sucesso.` 
+                : `Your order with reference <strong>${order.reference}</strong> has been successfully registered.`}</p>
               
               <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <p style="margin: 5px 0;"><strong>Referência:</strong> ${order.reference}</p>
-                <p style="margin: 5px 0;"><strong>Total:</strong> ${order.total.toLocaleString('pt-PT', { style: 'currency', currency: 'AOA' })}</p>
-                <p style="margin: 5px 0;"><strong>Método de Pagamento:</strong> ${order.paymentMethod}</p>
-                <p style="margin: 5px 0;"><strong>Opção de Entrega:</strong> ${order.deliveryOption}</p>
+                <h3 style="margin-top: 0;">${isPT ? 'Detalhes do Pedido' : 'Order Details'}</h3>
+                <p><strong>${isPT ? 'Escola' : 'School'}:</strong> ${order.schoolName}</p>
+                <p><strong>${isPT ? 'Aluno' : 'Student'}:</strong> ${order.studentName}</p>
+                <p><strong>${isPT ? 'Total' : 'Total'}:</strong> ${order.total.toLocaleString('pt-PT', { style: 'currency', currency: 'AOA' })}</p>
+                <p><strong>${isPT ? 'Método de Pagamento' : 'Payment Method'}:</strong> ${order.paymentMethod}</p>
               </div>
 
-              <p>Por favor, realize o pagamento conforme o método selecionado para que possamos processar o seu pedido o mais rápido possível.</p>
-              
+              <div style="margin-top: 20px;">
+                <h3 style="margin-top: 0;">${isPT ? 'Produtos' : 'Products'}</h3>
+                <ul style="list-style: none; padding: 0;">
+                  ${order.items.map(item => {
+                    const itemName = typeof item.name === 'string' 
+                      ? item.name 
+                      : (item.name[order.language] || item.name.pt || item.name.en || 'Item');
+                    return `
+                      <li style="padding: 10px 0; border-bottom: 1px solid #eee;">
+                        <strong>${itemName}</strong><br>
+                        ${item.quantity} x ${item.price.toLocaleString('pt-PT', { style: 'currency', currency: 'AOA' })}
+                      </li>
+                    `;
+                  }).join('')}
+                </ul>
+              </div>
+
+              ${order.paymentMethod === 'transferencia' ? `
+                <div style="background-color: #fff9e6; border-left: 4px solid #ffcc00; padding: 15px; margin: 20px 0;">
+                  <h4 style="margin-top: 0;">${isPT ? 'Instruções de Pagamento' : 'Payment Instructions'}</h4>
+                  <p>${isPT 
+                    ? 'Por favor, realize a transferência para o IBAN abaixo e envie o comprovativo.' 
+                    : 'Please make the transfer to the IBAN below and send the proof.'}</p>
+                  <p><strong>IBAN:</strong> BIC AO06 0051 0000 8030 4996 1512 5</p>
+                  <p><strong>Titular:</strong> NEOKUDILONGA</p>
+                </div>
+              ` : ''}
+
               <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #888;">
-                <p>© ${new Date().getFullYear()} Neokudilonga. Todos os direitos reservados.</p>
+                <p>NEOKUDILONGA - Livraria Escolar & Jogos Educativos</p>
+                <p>WhatsApp: +244 919 948 887 | Email: neokudilonga@gmail.com</p>
               </div>
             </div>
-          `,
+          `
         },
-      });
+      };
+
+      await firestore.collection('mail').add(emailContent);
       console.log("[API Orders] POST - Email trigger added to 'mail' collection");
     } catch (emailError) {
       console.error("[API Orders] POST - Error triggering email extension:", emailError);

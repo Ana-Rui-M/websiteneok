@@ -86,3 +86,99 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Mobile Portrait Specific Adjustments */
+@media screen and (max-width: 768px) and (orientation: portrait) {
+  .header-container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    height: 4.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  .logo-wrapper {
+    gap: 0 !important;
+  }
+
+  .site-logo {
+    height: 2.5rem !important;
+    width: auto !important;
+  }
+
+  .header-right {
+    space-x: 0.5rem !important;
+  }
+
+  .header-actions {
+    gap: 0.5rem !important;
+    margin-left: 0.5rem !important;
+  }
+
+  .header-actions > * + * {
+    margin-left: 0.5rem !important;
+  }
+
+  /* Cart button specific reduction for mobile portrait */
+  .header-actions button[size="lg"] {
+    height: 2.5rem !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    font-size: 0.875rem !important;
+  }
+
+  /* Ensure main content is centered and doesn't overflow */
+  main .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+
+  /* Adjust school selection buttons for mobile portrait */
+  .grid {
+    width: 100% !important;
+  }
+
+  /* Specific fix for TabsList on mobile portrait */
+  [data-radix-collection-item] {
+    font-size: 0.875rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  /* Center headings and descriptions */
+  h1, h2, h3, p {
+    text-align: center !important;
+  }
+
+  .mt-6 {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  
+  * {
+    max-width: 100vw !important;
+  }
+
+  .container {
+    max-width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+}

@@ -42,9 +42,9 @@ export default function ProductCard({ product, productBadgeRenderer }: ProductCa
   const isOutOfStock = product.stockStatus === 'out_of_stock';
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden transition-all hover:shadow-lg">
+    <Card className="group flex h-full flex-col overflow-hidden transition-all hover:shadow-lg">
       <CardHeader className="relative p-0">
-        {product.type === 'game' && Array.isArray(product.image) && product.image.length > 1 ? (
+        {Array.isArray(product.image) && product.image.length > 1 ? (
           <Carousel className="w-full">
             <CarouselContent>
               {product.image.map((img: string, index: number) => (
@@ -63,12 +63,8 @@ export default function ProductCard({ product, productBadgeRenderer }: ProductCa
                 </CarouselItem>
               ))}
             </CarouselContent>
-            {product.image.length > 1 && (
-                <>
-                    <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2" />
-                    <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2" />
-                </>
-            )}
+            <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100" />
+            <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100" />
           </Carousel>
         ) : (
            <div className="relative aspect-[3/4] w-full overflow-hidden bg-muted/30">

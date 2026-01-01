@@ -15,10 +15,11 @@ interface ImageUploadProps {
   value?: string | string[];
   onChange: (val: string | string[]) => void;
   multiple?: boolean;
+  max?: number;
   folder?: string; // optional R2 folder prefix
 }
 
-export function ImageUpload({ label = 'Imagem', value, onChange, multiple = false, folder }: ImageUploadProps) {
+export function ImageUpload({ label = 'Imagem', value, onChange, multiple = false, max, folder }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState<number>(0);
   const images: string[] = Array.isArray(value) ? value : (value ? [value] : []);
@@ -29,6 +30,15 @@ export function ImageUpload({ label = 'Imagem', value, onChange, multiple = fals
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+
+    if (max && multiple && images.length + files.length > max) {
+      toast({
+        title: 'Limite excedido',
+        description: `Só pode carregar até ${max} imagens.`,
+        variant: 'destructive',
+      });
+      return;
+    }
 
     // Check if user is authenticated with Firebase client-side
     if (!auth.currentUser) {

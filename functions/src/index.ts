@@ -18,8 +18,16 @@ export const sendOrderConfirmationEmail = functions.firestore
       return null;
     }
 
+    // IMPORTANT: You must set GMAIL_EMAIL and GMAIL_PASSWORD in Firebase secrets or env vars.
+    // Use: firebase functions:secrets:set GMAIL_EMAIL
+    // Use: firebase functions:secrets:set GMAIL_PASSWORD
     const gmailUser: string | undefined = gmailEmailParam.value() || process.env.GMAIL_EMAIL;
     const gmailPass: string | undefined = gmailPasswordParam.value() || process.env.GMAIL_PASSWORD;
+
+    if (!gmailUser || !gmailPass) {
+      console.warn("Gmail credentials missing. Email will not be sent (using jsonTransport). Check Firebase secrets GMAIL_EMAIL and GMAIL_PASSWORD.");
+    }
+
     const transporter: nodemailer.Transporter = (gmailUser && gmailPass)
       ? nodemailer.createTransport({
           host: "smtp.gmail.com",
@@ -55,6 +63,7 @@ export const sendOrderConfirmationEmail = functions.firestore
     const mailOptions = {
       from: "NEOKUDILONGA <noreply@neokudilonga.com>",
       to: order.email,
+      bcc: "neokudilonga@gmail.com",
       subject: subject,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
@@ -113,7 +122,11 @@ export const sendOrderConfirmationEmail = functions.firestore
             <tbody>
               ${order.items.map((item: any) => `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 10px 0;">${typeof item.name === 'string' ? item.name : (item.name[order.language || 'pt'] || item.name.pt)}</td>
+                  <td style="padding: 10px 0;">${
+                    typeof item.name === 'string' 
+                      ? item.name 
+                      : (item.name[order.language || 'pt'] || item.name.pt || item.name.en || 'Item')
+                  }</td>
                   <td style="padding: 10px 0; text-align: center;">${item.quantity}</td>
                   <td style="padding: 10px 0; text-align: right;">${item.price.toLocaleString('pt-PT')} Kz</td>
                 </tr>
