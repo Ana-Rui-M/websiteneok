@@ -9,6 +9,7 @@ import {
   School,
   ShoppingCart,
   Tags,
+  MessageSquare,
 } from "lucide-react";
 import {
   SidebarMenu,
@@ -108,6 +109,18 @@ export function AdminSidebarMenu() {
                 <Link href="/admin/orders">
                     <ShoppingCart />
                     <span>{'Orders'}</span>
+                </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                asChild
+                isActive={isPartiallyActive("/admin/chat-monitor")}
+                tooltip={'Chat Bot'}
+                >
+                <Link href="/admin/chat-monitor">
+                    <MessageSquare />
+                    <span>{'Chat Bot'}</span>
                 </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>

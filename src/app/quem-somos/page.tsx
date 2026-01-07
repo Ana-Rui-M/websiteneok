@@ -5,6 +5,7 @@ import Image from "next/image";
 import Header from "@/components/header";
 import { NeokudilongaLogo } from "@/components/logo";
 import { useLanguage } from "@/context/language-context";
+import { normalizeImageUrl } from "@/lib/utils";
 
 export default function QuemSomosPage() {
   const { t } = useLanguage();
@@ -42,11 +43,11 @@ export default function QuemSomosPage() {
                 <div className="grid grid-cols-1 gap-12 md:grid-cols-2 md:items-center">
                     <div className="order-last md:order-first">
                         <Image 
-                            src="https://placehold.co/600x400.png"
+                            src={normalizeImageUrl("gs://biblioangola.firebasestorage.app/products/1000082042.jpg")}
                             alt="A nossa equipa"
                             width={600}
                             height={400}
-                            className="rounded-lg shadow-md"
+                            className="rounded-lg shadow-md object-cover"
                             data-ai-hint="team business"
                         />
                     </div>

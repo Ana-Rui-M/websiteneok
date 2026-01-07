@@ -164,7 +164,13 @@ export const ShopPageContent = ({
       grades[g].mandatory = uniq(grades[g].mandatory);
       grades[g].recommended = uniq(grades[g].recommended);
       grades[g].didactic_aids = uniq(grades[g].didactic_aids);
-      grades[g].all = uniq(grades[g].all);
+      
+      // Ensure "all" products are ordered: mandatory first, then recommended, then others
+      grades[g].all = uniq([
+        ...grades[g].mandatory,
+        ...grades[g].recommended,
+        ...grades[g].didactic_aids
+      ]);
     });
     return grades;
   }, [schoolReadingPlan, productsById]);
@@ -298,7 +304,7 @@ export const ShopPageContent = ({
                             String(grade).toLowerCase() === '5-9' || 
                             String(grade).toLowerCase() === '10-12' || 
                             showIndividual === grade ? (
-                              <div className="space-y-4">
+                              <div className="space-y-8">
                                 {(String(grade).toLowerCase() === '1-4' || 
                                   String(grade).toLowerCase() === '5-9' || 
                                   String(grade).toLowerCase() === '10-12') && (
@@ -306,7 +312,34 @@ export const ShopPageContent = ({
                                     {t('shop.individual_purchase_only')}
                                   </div>
                                 )}
-                                <ProductGridWithBadges products={gradeProducts.all} grade={grade} schoolReadingPlan={schoolReadingPlan} />
+                                
+                                {gradeProducts.mandatory.length > 0 && (
+                                  <div className="space-y-4">
+                                    <h3 className="font-headline text-2xl font-semibold text-blue-900">{t('shop.mandatory')}</h3>
+                                    <ProductGridWithBadges products={gradeProducts.mandatory} grade={grade} schoolReadingPlan={schoolReadingPlan} />
+                                  </div>
+                                )}
+
+                                {gradeProducts.recommended.length > 0 && (
+                                  <div className="space-y-4">
+                                    <h3 className="font-headline text-2xl font-semibold text-amber-900">{t('shop.recommended')}</h3>
+                                    <ProductGridWithBadges products={gradeProducts.recommended} grade={grade} schoolReadingPlan={schoolReadingPlan} />
+                                  </div>
+                                )}
+
+                                {gradeProducts.didactic_aids.length > 0 && (
+                                  <div className="space-y-4">
+                                    <h3 className="font-headline text-2xl font-semibold">{t('shop.didactic_aids')}</h3>
+                                    <ProductGridWithBadges products={gradeProducts.didactic_aids} grade={grade} schoolReadingPlan={schoolReadingPlan} />
+                                  </div>
+                                )}
+
+                                {gradeProducts.all.length > 0 && 
+                                 gradeProducts.mandatory.length === 0 && 
+                                 gradeProducts.recommended.length === 0 && 
+                                 gradeProducts.didactic_aids.length === 0 && (
+                                  <ProductGridWithBadges products={gradeProducts.all} grade={grade} schoolReadingPlan={schoolReadingPlan} />
+                                )}
                               </div>
                            ) : (
                               <div className="space-y-6">
@@ -329,7 +362,7 @@ export const ShopPageContent = ({
               )}
 
               {/* Kit Completo (Obrigatórios + Recomendados) */}
-              {(gradeProducts.mandatory.length > 0 || gradeProducts.recommended.length > 0) && (
+              {gradeProducts.recommended.length > 0 && (
                   <div key="complete-kit" className="flex flex-col rounded-xl border-2 border-amber-500 bg-amber-50/30 p-6 shadow-sm transition-all hover:shadow-md">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex flex-col">

@@ -32,10 +32,10 @@ export const en = {
     title: 'About Neokudilonga',
     subtitle: 'Connecting knowledge and future through books and technology.',
     mission_title: 'Our Mission',
-    mission_p1: 'Our mission is to provide high-quality educational materials, from school books to educational games, to support the learning journey of students in Angola. We believe that access to knowledge is the key to development and a more prosperous future.',
+    mission_p1: 'Our mission is to provide high-quality educational materials for all ages, from books to educational games, to support the learning journey of students in Angola. We believe that access to knowledge is the key to development and a more prosperous future.',
     mission_p2: 'At Neokudilonga, we combine the tradition of bookstores with the convenience of modern technology, creating an easy-to-use platform for parents, students, and schools.',
     history_title: 'Our Story',
-    history_p1: 'Founded with a passion for education, Neokudilonga was born from the desire to simplify access to school materials in Angola. We started as a small bookstore and, over time, have grown to become a benchmark in the sector, always focused on the needs of our school communities.',
+    history_p1: 'Founded with a passion for education, Neokudilonga was born from the desire to simplify access to literature in Angola. We started as a small distributor and, over time, have grown to become a benchmark in the sector, always focused on the needs of our school communities.',
   },
   contact_page: {
     title: 'Contact Us',
