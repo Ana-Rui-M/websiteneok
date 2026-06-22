@@ -17,6 +17,7 @@ import {
 import { NeokudilongaLogoAbbr } from "@/components/logo";
 import { LogoutButton } from "./logout-button";
 import { AdminSidebarMenu } from "./client";
+import { UserProfile } from "./user-profile";
 
 export default function AdminLayout({
   children,
@@ -45,6 +46,7 @@ export default function AdminLayout({
             <AdminSidebarMenu />
           </SidebarContent>
            <SidebarFooter>
+              <UserProfile />
               <SidebarMenu>
                  <SidebarMenuItem>
                    <LogoutButton />
