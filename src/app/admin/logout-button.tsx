@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { SidebarMenuButton } from "@/components/ui/sidebar";
 import { LogOut } from "lucide-react";
-import { getAuth } from "firebase/auth";
+import { getAuth, signOut } from "firebase/auth";
 import { app } from "../../lib/firebase";
 
 export function LogoutButton() {
@@ -14,11 +14,8 @@ export function LogoutButton() {
     const handleLogout = async () => {
         try {
             const auth = getAuth(app);
-            const user = auth.currentUser;
-
-            if (user) {
-                await user.delete();
-                console.log("User deleted from Firebase.");
+            if (auth.currentUser) {
+                await signOut(auth);
             }
 
             const response = await fetch("/api/auth/logout", {
@@ -26,27 +23,18 @@ export function LogoutButton() {
             });
 
             if (response.ok) {
-                toast({ title: "User deleted and logged out successfully." });
+                toast({ title: "Logged out successfully." });
                 router.push("/admin/login");
             } else {
                 throw new Error("Failed to clear backend session.");
             }
-        } catch (error: any) {
-            console.error("Logout/Delete error:", error);
-
-            if (error.code === "auth/requires-recent-login") {
-                toast({
-                    title: "Deletion failed",
-                    description: "You need to re-authenticate before deleting your account.",
-                    variant: "destructive",
-                });
-            } else {
-                toast({
-                    title: "Logout failed",
-                    description: "An error occurred during logout or deletion.",
-                    variant: "destructive",
-                });
-            }
+        } catch (error) {
+            console.error("Logout error:", error);
+            toast({
+                title: "Logout failed",
+                description: "An error occurred during logout. Please try again.",
+                variant: "destructive",
+            });
         }
     };
 

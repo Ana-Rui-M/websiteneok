@@ -33,6 +33,7 @@ import { useData } from "@/context/data-context";
 import { useLanguage } from "@/context/language-context";
 import { getDisplayName } from "@/lib/utils";
 import { ImageUpload } from "@/components/admin/image-upload";
+import { MUSICAL_INSTRUMENTS_GRADE_KEY } from "@/lib/reading-plan-utils";
 
 interface AddEditGameSheetProps {
   isOpen: boolean;
@@ -42,13 +43,6 @@ interface AddEditGameSheetProps {
 
 const readingPlanItemSchema = z.object({
   schoolId: z.string().min(1, "A escola é obrigatória."),
-  grade: z.union([z.coerce.number(), z.string()]).refine(val => {
-    const s = String(val);
-    if (s === '') return false;
-    // Permite números simples ou intervalos como 7-9
-    return /^\d+(-\d+)?$/.test(s);
-  }, "O ano deve ser um número ou intervalo (ex: 7-9)."),
-  status: z.enum(["mandatory", "recommended", "didactic_aids"]),
 });
 
 
@@ -138,7 +132,7 @@ export function AddEditGameSheet({
           stockStatus: game.stockStatus || 'in_stock',
           storagePlace: game.storagePlace || "",
           image: game.image || [],
-          readingPlan: gameReadingPlan as any,
+          readingPlan: gameReadingPlan.map((rp) => ({ schoolId: rp.schoolId, id: rp.id, productId: rp.productId })),
         });
       } else {
         form.reset({
@@ -155,15 +149,14 @@ export function AddEditGameSheet({
     }
   }, [game, form, isOpen, gameReadingPlan, language]);
 
-  const mapGradeToCycle = (grade: string | number, status: string) => {
-    if (status !== 'didactic_aids') return grade;
-    const g = String(grade).replace(/[^0-9]/g, '');
-    const n = parseInt(g);
-    if (n === 1) return '1-4';
-    if (n === 2) return '5-9';
-    if (n === 3) return '10-12';
-    return 'didactic_aids';
-  };
+  const mapGameReadingPlan = (items: { schoolId: string; id?: string; productId?: string }[]) =>
+    items.map((rp) => ({
+      id: rp.id || "",
+      productId: rp.productId || "",
+      schoolId: rp.schoolId,
+      grade: MUSICAL_INSTRUMENTS_GRADE_KEY,
+      status: "recommended" as const,
+    }));
 
   const onSubmit = async (data: GameFormValues) => {
     setAsyncError(null);
@@ -217,13 +210,7 @@ export function AddEditGameSheet({
       stockStatus: data.stockStatus,
       storagePlace: data.storagePlace,
       image: (data as any).image,
-      readingPlan: data.readingPlan?.map((rp: any) => ({
-        id: rp.id || "",
-        productId: rp.productId || "",
-        schoolId: rp.schoolId,
-        grade: mapGradeToCycle(rp.grade, rp.status),
-        status: rp.status as "mandatory" | "recommended" | "didactic_aids",
-      })) || [],
+      readingPlan: mapGameReadingPlan(data.readingPlan || []),
     };
 
     try {
@@ -393,13 +380,18 @@ export function AddEditGameSheet({
               />
               <div>
                 <h3 className="mb-4 text-lg font-medium">{t('games_page.reading_plan')}</h3>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  {language === "pt"
+                    ? "Os jogos e outros itens são atribuídos automaticamente ao separador Instrumentos Musicais de cada escola."
+                    : "Games and other items are automatically assigned to each school's Musical Instruments tab."}
+                </p>
                 {readingPlanFields.map((item, index) => (
-                  <div key={item.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 border rounded-md">
+                  <div key={item.id} className="flex flex-col sm:flex-row gap-4 mb-4 p-4 border rounded-md">
                     <FormField
                       control={form.control}
                       name={`readingPlan.${index}.schoolId`}
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex-1">
                           <FormLabel>{t('games_page.select_school')}</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
@@ -415,71 +407,6 @@ export function AddEditGameSheet({
                                   </SelectItem>
                                 );
                               })}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`readingPlan.${index}.grade`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('games_page.grade')}</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder={t('games_page.grade')} 
-                              {...field} 
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                const status = form.getValues(`readingPlan.${index}.status`);
-                                if (status === 'didactic_aids') {
-                                  // Only allow 1, 2, 3 for didactic_aids
-                                  if (/^[1-3]?$/.test(val)) {
-                                    field.onChange(val);
-                                  }
-                                } else {
-                                  // Allow numbers and hyphens for other statuses
-                                  if (/^[\d-]*$/.test(val)) {
-                                    field.onChange(val);
-                                  }
-                                }
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`readingPlan.${index}.status`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('games_page.select_status')}</FormLabel>
-                          <Select 
-                            onValueChange={(val) => {
-                              field.onChange(val);
-                              // If switching to didactic_aids, clear or validate grade
-                              if (val === 'didactic_aids') {
-                                const currentGrade = form.getValues(`readingPlan.${index}.grade`);
-                                if (!/^[1-3]$/.test(String(currentGrade))) {
-                                  form.setValue(`readingPlan.${index}.grade`, "");
-                                }
-                              }
-                            }} 
-                            value={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder={t('games_page.select_status')} />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="mandatory">{t('games_page.mandatory')}</SelectItem>
-                              <SelectItem value="recommended">{t('games_page.recommended')}</SelectItem>
-                              <SelectItem value="didactic_aids">{t('games_page.didactic_aids')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -502,7 +429,7 @@ export function AddEditGameSheet({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => appendReadingPlan({ schoolId: "", grade: "", status: "mandatory" })}
+                  onClick={() => appendReadingPlan({ schoolId: "" })}
                   className="w-full"
                 >
                   <PlusCircle className="mr-2 h-4 w-4" /> {t('games_page.add_to_reading_plan')}

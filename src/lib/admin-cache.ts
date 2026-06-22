@@ -3,6 +3,33 @@ import { firestore } from "@/lib/firebase-admin";
 import { unstable_cache } from "next/cache";
 import type { Product, ReadingPlanItem, School, Category, Order } from "@/lib/types";
 
+// Helper function to serialize Firestore Timestamps
+function serializeFirestoreTimestamps(data: any): any {
+  if (data === null || typeof data !== 'object') {
+    return data;
+  }
+
+  if (data instanceof Date) {
+    return data.toISOString();
+  }
+
+  if (data.toDate && typeof data.toDate === 'function') { // Check for Firestore Timestamp
+    return data.toDate().toISOString();
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(item => serializeFirestoreTimestamps(item));
+  }
+
+  const serializedData: { [key: string]: any } = {};
+  for (const key in data) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      serializedData[key] = serializeFirestoreTimestamps(data[key]);
+    }
+  }
+  return serializedData;
+}
+
 // Helper function to handle Firestore operations safely
 async function safeFirestoreOperation<T>(operation: () => Promise<T[]>): Promise<T[]> {
   try {
@@ -21,7 +48,7 @@ export const getCachedProducts = unstable_cache(
     if (!firestore) return [];
     return safeFirestoreOperation(async () => {
       const snapshot = await firestore!.collection('products').get();
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any as Product));
+      return snapshot.docs.map(doc => serializeFirestoreTimestamps({ id: doc.id, ...doc.data() }) as Product);
     });
   },
   ['admin-products'],
@@ -33,7 +60,7 @@ export const getCachedReadingPlan = unstable_cache(
     if (!firestore) return [];
     return safeFirestoreOperation(async () => {
       const snapshot = await firestore!.collection('readingPlan').get();
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any as ReadingPlanItem));
+      return snapshot.docs.map(doc => serializeFirestoreTimestamps({ id: doc.id, ...doc.data() }) as ReadingPlanItem);
     });
   },
   ['admin-reading-plan'],
@@ -45,7 +72,7 @@ export const getCachedSchools = unstable_cache(
     if (!firestore) return [];
     return safeFirestoreOperation(async () => {
       const snapshot = await firestore!.collection('schools').get();
-      const schools = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any as School));
+      const schools = snapshot.docs.map(doc => serializeFirestoreTimestamps({ id: doc.id, ...doc.data() }) as School);
       // Ordenar por 'order' (se existir) ou por nome como fallback
       return schools.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
     });
@@ -59,7 +86,7 @@ export const getCachedCategories = unstable_cache(
     if (!firestore) return [];
     return safeFirestoreOperation(async () => {
       const snapshot = await firestore!.collection('categories').get();
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any as Category));
+      return snapshot.docs.map(doc => serializeFirestoreTimestamps({ id: doc.id, ...doc.data() }) as Category);
     });
   },
   ['admin-categories'],
@@ -71,7 +98,7 @@ export const getCachedPublishers = unstable_cache(
     if (!firestore) return [];
     return safeFirestoreOperation(async () => {
       const snapshot = await firestore!.collection('publishers').get();
-      return snapshot.docs.map(doc => doc.id);
+      return snapshot.docs.map(doc => serializeFirestoreTimestamps(doc.id)); // Publishers are just IDs, but serialize for consistency
     });
   },
   ['admin-publishers'],
@@ -92,7 +119,7 @@ export const getCachedOrders = unstable_cache(
           snapshot = await firestore!.collection('orders').get();
         }
         
-        const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any as Order));
+        const orders = snapshot.docs.map(doc => serializeFirestoreTimestamps({ id: doc.id, ...doc.data() }) as Order);
         
         // Ordenar por createdAt (se existir) ou por data de criação do documento
         return orders.sort((a, b) => {

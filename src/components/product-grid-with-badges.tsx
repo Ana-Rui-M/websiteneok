@@ -2,7 +2,11 @@ import React, { useMemo } from "react";
 import ProductGrid from "@/components/product-grid";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/context/language-context";
-import { normalizeGradeKey, resolveReadingPlanBucket } from "@/lib/reading-plan-utils";
+import {
+  isMusicalInstrumentsGrade,
+  normalizeGradeKey,
+  resolveReadingPlanBucket,
+} from "@/lib/reading-plan-utils";
 import type { Product, ReadingPlanItem } from "@/lib/types";
 
 interface ProductGridWithBadgesProps {
@@ -30,9 +34,17 @@ const ProductGridWithBadges: React.FC<ProductGridWithBadgesProps> = ({
     <ProductGrid
       products={products}
       productBadgeRenderer={(product: Product) => {
+        if (product.type === "game" || isMusicalInstrumentsGrade(grade)) {
+          return null;
+        }
+
         const planItem = gradePlan.find((gp) => gp.productId === product.id);
         if (planItem) {
-          const bucket = resolveReadingPlanBucket(planItem.grade, planItem.status);
+          const bucket = resolveReadingPlanBucket(
+            planItem.grade,
+            planItem.status,
+            product.type
+          );
           let badgeLabel = t("shop.recommended");
           let badgeVariant: "default" | "secondary" | "outline" = "secondary";
 

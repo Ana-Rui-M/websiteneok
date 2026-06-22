@@ -91,6 +91,7 @@ export const en = {
     individual_purchase_only: 'Only available for individual purchase (Kits disabled)',
     select_grade: 'Select Grade',
     mandatory_books: 'Mandatory Books',
+    recommended_books: 'Recommended Books',
     buy_all_books: 'All books for the year (mandatory + optional)',
     books: 'books',
     no_reading_plan: 'No reading plan available',
@@ -110,6 +111,7 @@ export const en = {
   grades: {
     reception: 'Reception',
     others: 'Others',
+    musical_instruments: 'Musical Instruments',
     grade: 'Grade',
   },
   common: {

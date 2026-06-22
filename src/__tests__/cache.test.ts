@@ -70,13 +70,13 @@ describe('Cache Utility', () => {
   });
 
   it('should clear all cache entries', () => {
-    cache.set('key1', 'value1', 60000);
-    cache.set('key2', 'value2', 60000);
-    cache.set('key3', 'value3', 60000);
+    cache.set('nk_cache_key1', 'value1', 60000);
+    cache.set('nk_cache_key2', 'value2', 60000);
+    cache.set('nk_cache_key3', 'value3', 60000);
     
-    expect(cache.get('key1')).toBe('value1');
-    expect(cache.get('key2')).toBe('value2');
-    expect(cache.get('key3')).toBe('value3');
+    expect(cache.get('nk_cache_key1')).toBe('value1');
+    expect(cache.get('nk_cache_key2')).toBe('value2');
+    expect(cache.get('nk_cache_key3')).toBe('value3');
     
     cache.clear();
     

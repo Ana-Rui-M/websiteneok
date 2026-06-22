@@ -2,6 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 import { Providers } from "./providers";
+import { 
+  getCachedSchools, 
+  getCachedProducts, 
+  getCachedReadingPlan, 
+  getCachedCategories,
+  getCachedPublishers 
+} from "@/lib/admin-cache";
 
 export const metadata: Metadata = {
   title: "Neokudilonga",
@@ -17,6 +24,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [
+    initialSchools, 
+    initialProducts, 
+    initialReadingPlan, 
+    initialCategories,
+    initialPublishers
+  ] = await Promise.all([
+    getCachedSchools(),
+    getCachedProducts(),
+    getCachedReadingPlan(),
+    getCachedCategories(),
+    getCachedPublishers()
+  ]);
+
   return (
     <html lang="pt" suppressHydrationWarning>
       <head>
@@ -28,7 +49,13 @@ export default async function RootLayout({
         <meta name="theme-color" content="#7A3E2E" />
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
-        <Providers>
+        <Providers
+          initialSchools={initialSchools}
+          initialProducts={initialProducts}
+          initialReadingPlan={initialReadingPlan}
+          initialCategories={initialCategories}
+          initialPublishers={initialPublishers}
+        >
           {children}
         </Providers>
       </body>

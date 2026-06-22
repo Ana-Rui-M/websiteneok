@@ -33,15 +33,19 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<Language>('pt');
 
   useEffect(() => {
-    const storedLang = localStorage.getItem('language') as Language | null;
-    if (storedLang && (storedLang === 'pt' || storedLang === 'en')) {
-      setLanguageState(storedLang);
+    if (typeof window !== 'undefined') {
+      const storedLang = localStorage.getItem('language') as Language | null;
+      if (storedLang && (storedLang === 'pt' || storedLang === 'en')) {
+        setLanguageState(storedLang);
+      }
     }
   }, []);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem('language', lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('language', lang);
+    }
   };
 
   const t = useCallback((key: string, options?: { [key: string]: string | number }) => {

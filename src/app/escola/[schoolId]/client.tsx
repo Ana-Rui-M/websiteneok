@@ -13,7 +13,9 @@ import Header from "@/components/header";
 import { normalizeImageUrl, getDisplayName } from "@/lib/utils";
 import {
   isDidacticGradeRange,
+  isMusicalInstrumentsGrade,
   normalizeGradeKey,
+  resolveEffectiveGradeKey,
   resolveReadingPlanBucket,
   sortGradeKeys,
 } from "@/lib/reading-plan-utils";
@@ -24,6 +26,7 @@ interface GradeProducts {
   optional: Product[];
   didactic_aids: Product[];
   complete: Product[];
+  other_items: Product[];
 }
 
 interface SchoolReadingPlanClientProps {
@@ -53,29 +56,34 @@ export default function SchoolReadingPlanClient({
       const product = allProducts.find((p) => p.id === item.productId);
       if (!product || product.stockStatus === "sold_out") return;
 
-      const gradeKey = normalizeGradeKey(item.grade);
+      const gradeKey = resolveEffectiveGradeKey(product.type, item.grade);
       if (!gradeMap.has(gradeKey)) {
-        gradeMap.set(gradeKey, { mandatory: [], optional: [], didactic_aids: [], complete: [] });
+        gradeMap.set(gradeKey, { mandatory: [], optional: [], didactic_aids: [], complete: [], other_items: [] });
       }
 
       const gradeProducts = gradeMap.get(gradeKey)!;
-      const bucket = resolveReadingPlanBucket(gradeKey, item.status);
 
-      if (bucket === "mandatory") {
-        gradeProducts.mandatory.push(product);
-      } else if (bucket === "recommended") {
-        gradeProducts.optional.push(product);
+      if (product.type === "game") {
+        gradeProducts.other_items.push(product);
       } else {
-        gradeProducts.didactic_aids.push(product);
-      }
+        const bucket = resolveReadingPlanBucket(gradeKey, item.status, product.type);
 
-      // Complete kit = mandatory + recommended only (never didactic aids)
-      if (
-        !isDidacticGradeRange(gradeKey) &&
-        (item.status === "mandatory" || item.status === "recommended") &&
-        !gradeProducts.complete.find((p) => p.id === product.id)
-      ) {
-        gradeProducts.complete.push(product);
+        if (bucket === "mandatory") {
+          gradeProducts.mandatory.push(product);
+        } else if (bucket === "recommended") {
+          gradeProducts.optional.push(product);
+        } else {
+          gradeProducts.didactic_aids.push(product);
+        }
+
+        // Complete kit = mandatory + recommended only (never didactic aids)
+        if (
+          !isDidacticGradeRange(gradeKey) &&
+          (item.status === "mandatory" || item.status === "recommended") &&
+          !gradeProducts.complete.find((p) => p.id === product.id)
+        ) {
+          gradeProducts.complete.push(product);
+        }
       }
     });
 
@@ -92,6 +100,7 @@ export default function SchoolReadingPlanClient({
       gradeProducts.mandatory = uniq(gradeProducts.mandatory);
       gradeProducts.optional = uniq(gradeProducts.optional);
       gradeProducts.didactic_aids = uniq(gradeProducts.didactic_aids);
+      gradeProducts.other_items = uniq(gradeProducts.other_items);
       gradeProducts.complete = uniq([
         ...gradeProducts.mandatory,
         ...gradeProducts.optional,
@@ -110,6 +119,7 @@ export default function SchoolReadingPlanClient({
 
   // Copy link function
   const copyLink = async () => {
+    if (typeof window === 'undefined') return;
     const url = window.location.href;
     try {
       await navigator.clipboard.writeText(url);
@@ -122,13 +132,16 @@ export default function SchoolReadingPlanClient({
 
   // Scroll to top when page loads - delay to ensure content is rendered
   useEffect(() => {
-    // Immediate scroll
-    window.scrollTo(0, 0);
-    // Also scroll after a short delay to handle any late rendering
-    const timer = setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'auto' });
-    }, 100);
-    return () => clearTimeout(timer);
+    // Only run in browser
+    if (typeof window !== 'undefined') {
+      // Immediate scroll
+      window.scrollTo(0, 0);
+      // Also scroll after a short delay to handle any late rendering
+      const timer = setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const gradeProducts = selectedGrade ? productsByGrade.get(selectedGrade) : null;
@@ -157,6 +170,7 @@ export default function SchoolReadingPlanClient({
     const lowerGrade = normalizeGradeKey(grade);
     if (lowerGrade === "iniciação" || lowerGrade === "reception") return t("grades.reception");
     if (lowerGrade === "didactic_aids") return t("shop.didactic_aids");
+    if (isMusicalInstrumentsGrade(lowerGrade)) return t("grades.musical_instruments");
     if (lowerGrade === "outros" || lowerGrade === "others") return t("grades.others");
     if (lowerGrade === "1-4")
       return language === "pt"
@@ -186,6 +200,8 @@ export default function SchoolReadingPlanClient({
 
   const selectedIsDidacticRange =
     !!selectedGrade && isDidacticGradeRange(selectedGrade);
+  const selectedIsMusicalInstruments =
+    !!selectedGrade && isMusicalInstrumentsGrade(selectedGrade);
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -275,7 +291,7 @@ export default function SchoolReadingPlanClient({
           {gradeProducts && (
             <div className="space-y-8">
               {/* Didactic aids — individual purchase only, no kits */}
-              {gradeProducts.didactic_aids.length > 0 && (
+              {!selectedIsMusicalInstruments && gradeProducts.didactic_aids.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold text-blue-900">
@@ -283,7 +299,7 @@ export default function SchoolReadingPlanClient({
                     </h2>
                     <Badge variant="outline" className="border-blue-300 text-blue-700">
                       {gradeProducts.didactic_aids.length}{" "}
-                      {t("shop.books") || "itens"}
+                      {t("shop.items")}
                     </Badge>
                   </div>
                   <p className="text-sm text-blue-700/70 mb-4">
@@ -342,8 +358,76 @@ export default function SchoolReadingPlanClient({
                 </div>
               )}
 
-              {/* Mandatory Books — not for didactic grade ranges */}
-              {!selectedIsDidacticRange && gradeProducts.mandatory.length > 0 && (
+              {/* Games & other items — musical instruments tab */}
+              {gradeProducts.other_items.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-blue-900">
+                      {t("grades.musical_instruments")}
+                    </h2>
+                    <Badge variant="outline" className="border-blue-300 text-blue-700">
+                      {gradeProducts.other_items.length}{" "}
+                      {t("shop.items")}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-blue-700/70 mb-4">
+                    {language === "pt"
+                      ? "Jogos, instrumentos musicais e outros materiais disponíveis para compra individual."
+                      : "Games, musical instruments and other materials available for individual purchase."}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                    {gradeProducts.other_items.map((product) => (
+                      <Card
+                        key={product.id}
+                        className="group overflow-hidden border-blue-100 hover:shadow-lg transition-shadow"
+                      >
+                        <Link href={`/produto/${product.id}`}>
+                          <div className="aspect-square overflow-hidden bg-gray-50">
+                            <Image
+                              src={
+                                normalizeImageUrl(
+                                  Array.isArray(product.image)
+                                    ? product.image[0]
+                                    : product.image
+                                ) || "/placeholder.svg"
+                              }
+                              alt={getDisplayName(product.name, language)}
+                              width={200}
+                              height={200}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        </Link>
+                        <CardContent className="p-3">
+                          <Link href={`/produto/${product.id}`}>
+                            <h3 className="text-sm font-medium text-blue-900 line-clamp-2 hover:text-blue-700">
+                              {getDisplayName(product.name, language)}
+                            </h3>
+                          </Link>
+                          <p className="mt-1 text-sm font-semibold text-blue-700">
+                            {product.price.toLocaleString("pt-PT")} Kz
+                          </p>
+                          <Button
+                            size="sm"
+                            className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => addToCartLocal(product)}
+                            disabled={isInCart(product.id)}
+                          >
+                            {isInCart(product.id) ? (
+                              <Check className="h-4 w-4" />
+                            ) : (
+                              <ShoppingCart className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Mandatory Books — not for didactic grade ranges or musical instruments */}
+              {!selectedIsDidacticRange && !selectedIsMusicalInstruments && gradeProducts.mandatory.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold text-blue-900">
@@ -390,7 +474,7 @@ export default function SchoolReadingPlanClient({
                                   <li key={idx} className="flex items-center gap-3 text-sm text-blue-800/80">
                                     <div className="relative h-14 w-12 flex-shrink-0 rounded-md overflow-hidden border border-blue-200 bg-gray-50">
                                       <Image
-                                        src={normalizeImageUrl(Array.isArray(book.image) ? book.image[0] : book.image) || "/placeholder.svg"}
+                                        src={normalizeImageUrl(Array.isArray(book.image) ? book.image[0] : book.image)}
                                         alt={getDisplayName(book.name, language)}
                                         fill
                                         className="object-cover"
@@ -436,7 +520,7 @@ export default function SchoolReadingPlanClient({
                         <Link href={`/produto/${product.id}`}>
                           <div className="aspect-square overflow-hidden bg-gray-50">
                             <Image
-                              src={normalizeImageUrl(Array.isArray(product.image) ? product.image[0] : product.image) || "/placeholder.svg"}
+                              src={normalizeImageUrl(Array.isArray(product.image) ? product.image[0] : product.image)}
                               alt={getDisplayName(product.name, language)}
                               width={200}
                               height={200}
@@ -473,7 +557,7 @@ export default function SchoolReadingPlanClient({
               )}
 
               {/* Complete Kit (All Books) - only show if there are recommended books */}
-              {!selectedIsDidacticRange && gradeProducts.optional.length > 0 && (
+              {!selectedIsDidacticRange && !selectedIsMusicalInstruments && gradeProducts.optional.length > 0 && (
                 <div className="mt-8">
                   <Card className="border-green-200 bg-gradient-to-br from-green-50 to-white">
                     <CardContent className="p-6">
@@ -513,7 +597,7 @@ export default function SchoolReadingPlanClient({
                                   <li key={idx} className="flex items-center gap-3 text-sm text-green-800/80">
                                     <div className="relative h-14 w-12 flex-shrink-0 rounded-md overflow-hidden border border-green-200 bg-gray-50">
                                       <Image
-                                        src={normalizeImageUrl(Array.isArray(book.image) ? book.image[0] : book.image) || "/placeholder.svg"}
+                                        src={normalizeImageUrl(Array.isArray(book.image) ? book.image[0] : book.image)}
                                         alt={getDisplayName(book.name, language)}
                                         fill
                                         className="object-cover"
@@ -556,6 +640,64 @@ export default function SchoolReadingPlanClient({
                   </Card>
                 </div>
               )}
+
+              {/* Recommended Books — not for didactic grade ranges or musical instruments */}
+              {!selectedIsDidacticRange && !selectedIsMusicalInstruments && gradeProducts.optional.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-blue-900">
+                      {t('shop.recommended_books') || 'Livros Recomendados'}
+                    </h2>
+                    <Badge variant="outline" className="border-blue-300 text-blue-700">
+                      {gradeProducts.optional.length} {t('shop.books') || 'livros'}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-blue-700/70 mb-4">
+                    {language === "pt"
+                      ? "Livros opcionais que complementam o plano de leitura e podem ser adquiridos individualmente."
+                      : "Optional books that complement the reading plan and can be purchased individually."}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                    {gradeProducts.optional.map((product) => (
+                      <Card key={product.id} className="group overflow-hidden border-blue-100 hover:shadow-lg transition-shadow">
+                        <Link href={`/produto/${product.id}`}>
+                          <div className="aspect-square overflow-hidden bg-gray-50">
+                            <Image
+                              src={normalizeImageUrl(Array.isArray(product.image) ? product.image[0] : product.image)}
+                              alt={getDisplayName(product.name, language)}
+                              width={200}
+                              height={200}
+                              className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                            />
+                          </div>
+                        </Link>
+                        <CardContent className="p-3">
+                          <Link href={`/produto/${product.id}`}>
+                            <h3 className="text-sm font-medium text-blue-900 line-clamp-2 hover:text-blue-700">
+                              {getDisplayName(product.name, language)}
+                            </h3>
+                          </Link>
+                          <p className="mt-1 text-sm font-semibold text-blue-700">
+                            {product.price.toLocaleString('pt-PT')} Kz
+                          </p>
+                          <Button
+                            size="sm"
+                            className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => addToCartLocal(product)}
+                            disabled={isInCart(product.id)}
+                          >
+                            {isInCart(product.id) ? (
+                              <Check className="h-4 w-4" />
+                            ) : (
+                              <ShoppingCart className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -573,7 +715,7 @@ export default function SchoolReadingPlanClient({
           )}
 
           {/* No Reading Plan Message for selected grade */}
-          {selectedGrade && (!gradeProducts || (gradeProducts.mandatory.length === 0 && gradeProducts.optional.length === 0 && gradeProducts.didactic_aids.length === 0)) && (
+          {selectedGrade && (!gradeProducts || (gradeProducts.mandatory.length === 0 && gradeProducts.optional.length === 0 && gradeProducts.didactic_aids.length === 0 && gradeProducts.other_items.length === 0)) && (
             <div className="text-center py-12">
               <BookOpen className="mx-auto h-12 w-12 text-blue-300" />
               <h3 className="mt-4 text-lg font-medium text-blue-900">

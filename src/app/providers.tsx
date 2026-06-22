@@ -1,3 +1,5 @@
+"use client";
+
 import { ReactNode } from "react";
 import { DataProvider } from "@/context/data-context";
 import { LanguageProvider } from "@/context/language-context";
@@ -14,21 +16,21 @@ import {
   getCachedPublishers 
 } from "@/lib/admin-cache";
 
-export async function Providers({ children }: { children: ReactNode }) {
-  // Fetch initial data using server-side cache
-  const [
-    initialSchools, 
-    initialProducts, 
-    initialReadingPlan, 
-    initialCategories,
-    initialPublishers
-  ] = await Promise.all([
-    getCachedSchools(),
-    getCachedProducts(),
-    getCachedReadingPlan(),
-    getCachedCategories(),
-    getCachedPublishers()
-  ]);
+export function Providers({ 
+  children,
+  initialSchools, 
+  initialProducts, 
+  initialReadingPlan, 
+  initialCategories,
+  initialPublishers
+}: { 
+  children: ReactNode;
+  initialSchools: any[];
+  initialProducts: any[];
+  initialReadingPlan: any[];
+  initialCategories: any[];
+  initialPublishers: any[];
+}) {
 
   return (
     <ThemeProvider

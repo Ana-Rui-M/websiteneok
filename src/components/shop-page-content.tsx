@@ -21,7 +21,9 @@ import { useLanguage } from "@/context/language-context";
 import { getDisplayName, normalizeSearch, normalizeImageUrl } from "@/lib/utils";
 import {
   isDidacticGradeRange,
+  isMusicalInstrumentsGrade,
   normalizeGradeKey,
+  resolveEffectiveGradeKey,
   resolveReadingPlanBucket,
   sortGradeKeys,
 } from "@/lib/reading-plan-utils";
@@ -82,12 +84,14 @@ export const ShopPageContent = ({
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     // Atualizar URL sem recarregar a página
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', value);
-    window.history.pushState(null, '', `?${params.toString()}`);
-    
-    // Rolar suavemente para o topo do conteúdo
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('tab', value);
+      window.history.pushState(null, '', `?${params.toString()}`);
+      
+      // Rolar suavemente para o topo do conteúdo
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
   
   const [bookSearchQuery, setBookSearchQuery] = useState("");
@@ -128,19 +132,23 @@ export const ShopPageContent = ({
       }
       const product = productsById[item.productId];
       if (product && product.stockStatus !== 'sold_out') {
-        const gradeKey = normalizeGradeKey(item.grade ?? "didactic_aids");
+        const gradeKey = resolveEffectiveGradeKey(product.type, item.grade ?? "didactic_aids");
         if (!grades[gradeKey]) {
           grades[gradeKey] = { mandatory: [], recommended: [], didactic_aids: [], all: [] };
         }
-        const bucket = resolveReadingPlanBucket(gradeKey, item.status);
-        if (bucket === "mandatory") {
-          grades[gradeKey].mandatory.push(product);
-        } else if (bucket === "recommended") {
-          grades[gradeKey].recommended.push(product);
+        if (product.type === 'game') {
+          grades[gradeKey].all.push(product);
         } else {
-          grades[gradeKey].didactic_aids.push(product);
+          const bucket = resolveReadingPlanBucket(gradeKey, item.status, product.type);
+          if (bucket === "mandatory") {
+            grades[gradeKey].mandatory.push(product);
+          } else if (bucket === "recommended") {
+            grades[gradeKey].recommended.push(product);
+          } else {
+            grades[gradeKey].didactic_aids.push(product);
+          }
+          grades[gradeKey].all.push(product);
         }
-        grades[gradeKey].all.push(product);
       }
     }
     // Deduplicate by product id to avoid React key collisions
@@ -249,6 +257,7 @@ export const ShopPageContent = ({
     const lowerGrade = normalizeGradeKey(grade);
     if (lowerGrade === 'iniciação' || lowerGrade === 'reception') return t('grades.reception');
     if (lowerGrade === 'didactic_aids') return t('shop.didactic_aids');
+    if (isMusicalInstrumentsGrade(lowerGrade)) return t('grades.musical_instruments');
     if (lowerGrade === 'outros' || lowerGrade === 'others') return t('grades.others');
     if (lowerGrade === '1-4') return language === 'pt' ? "1ª - 4ª Classe (Auxiliares Didáticos)" : "1st - 4th Grade (Didactic Aids)";
     if (lowerGrade === '5-9') return language === 'pt' ? "5ª - 9ª Classe (Auxiliares Didáticos)" : "5th - 9th Grade (Didactic Aids)";
@@ -327,32 +336,37 @@ export const ShopPageContent = ({
                         </AccordionTrigger>
                         <AccordionContent>
                            {isDidacticGradeRange(grade) ||
+                            isMusicalInstrumentsGrade(grade) ||
                             String(grade).toLowerCase() === 'outros' ||
                             showIndividual === grade ? (
                               <div className="space-y-8">
-                                
-                                {gradeProducts.mandatory.length > 0 && (
-                                  <div className="space-y-4">
-                                    <h3 className="font-headline text-2xl font-semibold text-blue-900">{t('shop.mandatory')}</h3>
-                                    <ProductGridWithBadges products={gradeProducts.mandatory} grade={grade} schoolReadingPlan={schoolReadingPlan} />
-                                  </div>
+                                {isMusicalInstrumentsGrade(grade) && gradeProducts.all.length > 0 && (
+                                  <ProductGridWithBadges products={gradeProducts.all} grade={grade} schoolReadingPlan={schoolReadingPlan} />
                                 )}
 
-                                {gradeProducts.recommended.length > 0 && (
+                                {!isMusicalInstrumentsGrade(grade) && gradeProducts.recommended.length > 0 && (
                                   <div className="space-y-4">
                                     <h3 className="font-headline text-2xl font-semibold text-amber-900">{t('shop.recommended')}</h3>
                                     <ProductGridWithBadges products={gradeProducts.recommended} grade={grade} schoolReadingPlan={schoolReadingPlan} />
                                   </div>
                                 )}
 
-                                {gradeProducts.didactic_aids.length > 0 && (
+                                {!isMusicalInstrumentsGrade(grade) && gradeProducts.mandatory.length > 0 && (
+                                  <div className="space-y-4">
+                                    <h3 className="font-headline text-2xl font-semibold text-blue-900">{t('shop.mandatory')}</h3>
+                                    <ProductGridWithBadges products={gradeProducts.mandatory} grade={grade} schoolReadingPlan={schoolReadingPlan} />
+                                  </div>
+                                )}
+
+                                {!isMusicalInstrumentsGrade(grade) && gradeProducts.didactic_aids.length > 0 && (
                                   <div className="space-y-4">
                                     <h3 className="font-headline text-2xl font-semibold">{t('shop.didactic_aids')}</h3>
                                     <ProductGridWithBadges products={gradeProducts.didactic_aids} grade={grade} schoolReadingPlan={schoolReadingPlan} />
                                   </div>
                                 )}
 
-                                {gradeProducts.all.length > 0 && 
+                                {!isMusicalInstrumentsGrade(grade) &&
+                                 gradeProducts.all.length > 0 && 
                                  gradeProducts.mandatory.length === 0 && 
                                  gradeProducts.recommended.length === 0 && 
                                  gradeProducts.didactic_aids.length === 0 && (
@@ -364,7 +378,8 @@ export const ShopPageContent = ({
                                   <div className="grid gap-6 lg:grid-cols-2">
               {/* Kit Obrigatório - don't show for 'outros' or didactic aids grade ranges */}
               {gradeProducts.mandatory.length > 0 && 
-               !isDidacticGradeRange(grade) && (
+               !isDidacticGradeRange(grade) &&
+               !isMusicalInstrumentsGrade(grade) && (
                   <div key="mandatory-kit" className="flex flex-col rounded-xl border-2 border-blue-600 bg-blue-50/30 p-6 shadow-sm transition-all hover:shadow-md">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex flex-col">
@@ -390,7 +405,7 @@ export const ShopPageContent = ({
                               <li key={idx} className="flex items-center gap-3">
                                 <div className="relative h-12 w-10 flex-shrink-0 rounded-md overflow-hidden border border-blue-200">
                                   <Image
-                                    src={normalizeImageUrl(Array.isArray(book.image) ? book.image[0] : book.image) || "/placeholder.svg"}
+                                    src={normalizeImageUrl(Array.isArray(book.image) ? book.image[0] : book.image)}
                                     alt={getDisplayName(book.name, language)}
                                     fill
                                     className="object-cover"
@@ -412,7 +427,8 @@ export const ShopPageContent = ({
 
               {/* Kit Completo (Obrigatórios + Recomendados) - don't show for 'outros' or didactic aids grade ranges */}
               {gradeProducts.recommended.length > 0 && 
-               !isDidacticGradeRange(grade) && (
+               !isDidacticGradeRange(grade) &&
+               !isMusicalInstrumentsGrade(grade) && (
                   <div key="complete-kit" className="flex flex-col rounded-xl border-2 border-amber-500 bg-amber-50/30 p-6 shadow-sm transition-all hover:shadow-md">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex flex-col">
@@ -441,7 +457,7 @@ export const ShopPageContent = ({
                               <li key={idx} className="flex items-center gap-3">
                                 <div className="relative h-12 w-10 flex-shrink-0 rounded-md overflow-hidden border border-amber-200">
                                   <Image
-                                    src={normalizeImageUrl(Array.isArray(book.image) ? book.image[0] : book.image) || "/placeholder.svg"}
+                                    src={normalizeImageUrl(Array.isArray(book.image) ? book.image[0] : book.image)}
                                     alt={getDisplayName(book.name, language)}
                                     fill
                                     className="object-cover"

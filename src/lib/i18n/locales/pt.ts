@@ -93,6 +93,7 @@ export const pt = {
     individual_purchase_only: 'Apenas disponível para compra individual (Kits desativados)',
     select_grade: 'Selecione o Ano',
     mandatory_books: 'Livros Obrigatórios',
+    recommended_books: 'Livros Recomendados',
     buy_all_books: 'Todos os livros do ano (obrigatórios + opcionais)',
     books: 'livros',
     no_reading_plan: 'Nenhum plano de leitura disponível',
@@ -112,6 +113,7 @@ export const pt = {
   grades: {
     reception: 'Iniciação',
     others: 'Outros',
+    musical_instruments: 'Instrumentos Musicais',
     grade: 'ª Classe',
   },
   common: {
