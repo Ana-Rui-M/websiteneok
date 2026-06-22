@@ -17,3 +17,19 @@ env:
     value: "1"
     availability:
       - BUILD
+      - RUNTIME
+  - variable: RESEND_API_KEY
+    value: re_brwHGGmk_6bxmEDZnq9CsMj3Qvn5bMJZx
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FROM_EMAIL
+    value: noreply@neokudilonga.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: ADMIN_EMAIL
+    value: neokudilonga@gmail.com
+    availability:
+      - BUILD
+      - RUNTIME

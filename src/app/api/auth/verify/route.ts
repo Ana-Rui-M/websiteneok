@@ -6,6 +6,7 @@ export const dynamic = "force-static";
 export async function GET(request: NextRequest) {
   try {
     const sessionCookie = request.cookies.get('session')?.value || '';
+    const userEmail = request.cookies.get('user_email')?.value || '';
 
     if (!sessionCookie) {
       return NextResponse.json({ isAuthenticated: false }, { status: 200 });
@@ -24,7 +25,8 @@ export async function GET(request: NextRequest) {
       'anaruimelo@gmail.com',
       'joaonfmelo@gmail.com',
     ]);
-    const email: string = (decodedClaims as any).email || '';
+    // Use email from the separate cookie (more reliable than session claims)
+    const email: string = userEmail || (decodedClaims as any).email || '';
     if (!allowedAdmins.has(email)) {
       return NextResponse.json({ isAuthenticated: false }, { status: 200 });
     }

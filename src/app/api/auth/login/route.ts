@@ -67,6 +67,15 @@ export async function POST(request: NextRequest) {
       // host-only cookie (no Domain attribute) for App Hosting compatibility
     });
 
+    // Store email in a separate cookie for role verification
+    response.cookies.set('user_email', email, {
+      maxAge: Math.floor(expiresIn / 1000),
+      httpOnly: true,
+      secure: request.nextUrl.protocol === 'https:',
+      sameSite: 'lax',
+      path: '/',
+    });
+
     return response;
   } catch (error) {
     console.error('[/api/auth/login] - Error logging in:', error);
