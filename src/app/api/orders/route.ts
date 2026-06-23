@@ -13,10 +13,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Firestore not initialized' }, { status: 500 });
     }
 
-    const orderRef = firestore.collection('orders').doc();
+    // Generate proper reference number: CATP-YYYYMMDDXXX
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    const randomSuffix = Math.floor(Math.random() * 900) + 100; // 3-digit random number
+    const reference = `CATP-${dateStr}${randomSuffix}`;
+    
+    const orderRef = firestore.collection('orders').doc(reference);
     const order: Order = {
       ...orderData,
-      reference: orderRef.id,
+      reference: reference,
       paymentStatus: 'unpaid',
       deliveryStatus: 'not_delivered',
       createdAt: new Date().toISOString()
